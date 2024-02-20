@@ -1,0 +1,218 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Dec 30 15:12:37 2023
+
+@author: arnau
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+import sklearn
+from scipy.spatial import Delaunay, ConvexHull
+import random
+import quadprog
+from sklearn.datasets import make_circles, make_classification, make_moons
+
+def subtesselate(data,size,dim):
+    
+    """ 
+    Builds the Delaunay triangulation from a subsample of points containing the convex hull and computes the barycentric coordinates from the other points.
+    
+    Args: 
+        - data: original set of points.
+        - size: size of the subsample of points from which to build the Delaunay triangulation less the convex hull.
+        - dim: dimension of the points of data.
+    
+    Returns:
+        - tri: Delaunay triangulation. The indexation of the vertices comes from sample, not from data.
+        - sample: sample of points from which tri is build including the convex hull.
+        - rem: remaining points, not used for the triangulation.
+        - bc: barycentric coordinates of rem with respect to tri.
+    """
+
+    length = len(data)
+    hull = ConvexHull(data)
+    sample = random.sample([i for i in range(length) if i not in hull.vertices],size)
+    sample = np.concatenate([sample,hull.vertices])
+    sample.sort()
+    rem = [i for i in range(length) if i not in sample]
+    tri = Delaunay(data[sample])
+    bc = []
+    
+    for i in rem:
+        point = data[i]
+        triangle = tri.find_simplex(point)
+        b = tri.transform[triangle,:dim].dot(np.transpose(point - tri.transform[triangle,dim]))
+        c = np.concatenate([b,[1-sum(b)]])
+        to_append = np.concatenate([[int(i),int(triangle)],c])
+        bc.append(np.concatenate([[int(i),int(triangle)],c]))
+    
+    sample = np.array(sample)
+    rem = np.array(rem)
+
+    return tri, sample, rem, bc
+
+def calc_bc(tri, triangle, point):
+    
+    """
+    Calculates the barycentric coordinates of a point with respect to a triangle from a triangulation.
+
+    Args:
+        - tri: triangulation from which the triangle comes.
+        - triangle: vertices from which the barycentric coordinates are calculated.
+        - point: point of which to calculate the barycentric coordinates.
+
+    Returns:
+        - c: barycentric coordinates of point with respect to triangle.
+    """
+
+    b = tri.transform[triangle,:2].dot(np.transpose(point - tri.transform[triangle,2]))
+    c = np.concatenate([b,[1-sum(b)]])
+    return c
+
+def recover_vert(tri, sample):
+    l = len(tri.simplices[0])
+    for i in range(len(tri.simplices)):
+        old = tri.simplices[i]
+        tri.simplices[i] = [sample[old[j]] for j in range(l)]
+    return tri
+
+def estimate_height(tri, point, labels):
+
+    """
+    Calculates the height/value/label of a point given the Delaunay triangulation and the labels of their points.
+
+    Args:
+        - tri: Delaunay triangulation.
+        - point: point from which to estimate the value.
+        - labels: values of the points of the triangulation.
+
+    Returns:
+        - label: estimated value of point.
+    """
+
+    triangle = tri.find_simplex(point)
+    verts = tri.simplices[triangle]
+    bc = calc_bc(tri, triangle, point)
+    label = labels[verts[0]]*bc[0]+labels[verts[1]]*bc[1]+labels[verts[2]]*bc[2]
+    return label
+
+def compute_eq_parameters(data, tri, rem, sample, bc, dim):
+    B = data[rem][:,dim]
+    A = np.zeros((len(rem),len(sample)))
+    for i in range(len(rem)):
+        s, x, y, z = bc[i][1:5]
+        a, b, c = tri.simplices[int(s)]
+        A[i][a], A[i][b], A[i][c] = x, y, z
+    return A, B
+
+def calc_labels(data, tri, rem, sample, bc, dim):
+    B = data[rem][:,dim]
+    A = np.zeros((len(rem),len(sample)))
+    for i in range(len(rem)):
+        s, x, y, z = bc[i][1:5]
+        a, b, c = tri.simplices[int(s)]
+        A[i][a], A[i][b], A[i][c] = x, y, z
+    sol = np.linalg.lstsq(A,B,rcond=None)
+    y = sol[0]
+    e = abs(np.matmul(A,y)-B)
+    P = 2*np.matmul(A.transpose(),A)
+    print(np.all(np.linalg.eigvals(P) > 0))
+    print(np.any(np.linalg.eigvals(P) < 0))
+    print(np.any(np.linalg.eigvals(P) == 0))
+    q = 2*np.matmul(e.transpose(),A)
+    W = np.identity(len(y))
+    print(np.all(np.linalg.eigvals(W) > 0))
+    h = np.zeros(len(y))
+    err = quadprog.solve_qp(P, q, W, h)[0]
+    return y, e, err
+
+def f(x,y):
+    """
+    Example function to give values to the points.
+    """
+    return np.exp(-x*x)*np.cos(np.pi*y)
+
+def delaunayization(data,size,dim):
+    tri, sample, rem, bc = subtesselate(data[:,0:dim],size,dim)
+    A, B = compute_eq_parameters(data, tri, rem, sample, bc, dim)
+    P = 2*np.matmul(A.transpose(),A)
+    t = 0
+    while np.all(np.linalg.eigvals(P)) <= 0:
+        t += 1
+        tri, sample, rem, bc = subtesselate(data[:,0:dim],size,dim)
+        A, B = compute_eq_parameters(data, tri, rem, sample, bc, dim)
+        P = 2*np.matmul(A.transpose(),A)
+        print(t)
+        
+    sol = np.linalg.lstsq(A,B,rcond=None)
+    y = sol[0]
+    e = abs(np.matmul(A,y)-B)
+    q = 2*np.matmul(e.transpose(),A)
+    W = np.identity(len(y))
+    print(np.all(np.linalg.eigvals(W) > 0))
+    h = np.zeros(len(y))
+    err = quadprog.solve_qp(P, q, W, h)[0]
+    return tri, sample, rem, bc, y, e, err
+    
+    
+    
+#IGNORE
+""" def quadprog_solve_qp(P, q, G, h, A=None, b=None): #0.5xT*P*x + qT*x s.t. Gx<=h; Ax = b
+    qp_G = .5 * (P + P.T)   # make sure P is symmetric
+    qp_a = -q
+    if A is not None:
+        qp_C = -np.vstack([A, G]).T
+        qp_b = -np.hstack([b, h])
+        meq = A.shape[0]
+    else:  # no equality constraint
+        qp_C = -G.T
+        qp_b = -h
+        meq = 0
+    return quadprog.solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0] """
+
+dim = 2
+n_samples = 10000
+size = 100
+
+data, labels = make_classification(n_samples=n_samples)
+data_aux = []
+for i in range(len(data)):
+    data_aux.append([data[i][j] for j in range(dim)])
+    data_aux[i].append(f(data_aux[i][0],data_aux[i][1]))
+data = np.array(data_aux)
+color_dict = {0:"red",1:"blue"}
+colors = [color_dict[labels[i]] for i in range(len(labels))]
+#tri, sample, rem, bc = subtesselate(data[:,0:2],100,2)
+#y, e, err = calc_labels(data, rem, sample, bc, dim)
+tri, sample, rem, bc, y, e, err = delaunayization(data,size,dim)
+
+""" B = []
+A = np.zeros((len(rem),len(sample)))
+for i in range(len(rem)):
+    B.append(f(data[rem[i]][0],data[rem[i]][1]))
+    s, x, y, z = bc[i][1:5]
+    a, b, c = tri.simplices[int(s)]
+    A[i][a], A[i][b], A[i][c] = x, y, z
+sol = np.linalg.lstsq(A,B,rcond=None)
+y = sol[0]
+e = abs(np.matmul(A,y)-B)
+P = 2*np.matmul(A.transpose(),A)
+q = 2*np.matmul(e.transpose(),A)
+G = np.identity(len(y))
+print(np.all(np.linalg.eigvals(G) > 0))
+h = np.zeros(len(y))
+err = quadprog.solve_qp(P, q, G, h)[0] """
+
+
+fig =  plt.figure(figsize = (10,7))
+ax = fig.add_subplot(111, projection='3d')
+my_cmap = plt.cm.jet
+sct = ax.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,dim],s=1,alpha=0.1,cmap = my_cmap)
+ax.scatter3D(data[sample][:,0],data[sample][:,1],y,color = "red")
+ax.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "green")
+ax.scatter(data[sample][:,0],data[sample][:,1],np.zeros(len(sample)),marker='x',color = "green")
+ax.plot_trisurf(data[sample][:,0],data[sample][:,1],y, triangles=tri.simplices, alpha=0.5)
+plt.show()

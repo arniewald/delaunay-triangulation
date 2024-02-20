@@ -1,0 +1,16 @@
+Alternative way to compute the labels: minimize curvature of the resulting surface.
+Algorithm with binary or bounded labels
+Higher dimensions
+Need to know in which format we will receive the data.
+Improve visualization of the surface
+Optimization 
+Fix the data origin
+Predict new points
+Non-euclidean distances
+
+05/2/24
+Apply algorithm to paper dataset
+Add points to convex hull edges (extend to n dimensions)
+No 3d plot, 2d with colors
+Change function of quadratic problem
+Vectorialize
