@@ -1,0 +1,73 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Dec 30 15:12:37 2023
+
+@author: arnau
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from time import time
+
+from sklearn.datasets import make_classification
+
+from functions import *
+
+
+dim = 2
+n_samples = 10000
+size = 100
+al = 0.1
+errw = 1
+it = 5
+rep = 1
+lb = -np.inf
+ub = np.inf
+binary=False
+threshold=0.5
+
+data, labels = make_classification(n_samples=n_samples)
+data_aux = []
+for i in range(len(data)):
+    data_aux.append([data[i][j] for j in range(dim)])
+    data_aux[i].append(f(data_aux[i][0],data_aux[i][1]))
+data = np.array(data_aux)
+
+data, sample, rem, out_hull = initialize_sample(data,size,dim,rep)
+print("Iteration\t LSQF error\t Estimated error\t Error variance\t Real error")
+tri, e, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
+
+fig0 = plt.figure()
+ax0 = fig0.add_subplot()
+ax0.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "red")
+ax0.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "red")
+ax0.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "red")
+ax0.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
+
+fig =  plt.figure(figsize = (10,7))
+ax = fig.add_subplot(111, projection='3d')
+my_cmap = plt.cm.jet
+sct = ax.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,dim],s=2,alpha=0.1,color='black')
+ax.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,dim],s=[100*i for i in err],color = "red")
+#ax.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "green")
+#ax.scatter(data[sample][:,0],data[sample][:,1],np.zeros(len(sample)),marker='x',color = "green")
+ax.plot_trisurf(data[sample][:,0],data[sample][:,1],data[sample][:,dim], triangles=tri.simplices, alpha=0.5)
+
+start = time()
+tri, e, err =  movepoints(data,sample,rem,out_hull,dim,it,al,errw,lb,ub,binary,threshold)
+end = time()
+print("Total time: ",end-start)
+
+ax0.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "blue")
+ax0.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "blue")
+ax0.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
+plt.show()
+
+fig2 =  plt.figure(figsize = (10,7))
+ax2 = fig2.add_subplot(111, projection='3d')
+my_cmap = plt.cm.jet
+sct = ax2.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,dim],s=2,alpha=0.1,color='black')
+ax2.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=[100*i for i in err],color = "red")
+ax2.plot_trisurf(data[sample][:,0],data[sample][:,1],data[sample][:,2], triangles=tri.simplices, alpha=0.5)
+
+plt.show()

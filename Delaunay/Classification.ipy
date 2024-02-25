@@ -1,0 +1,92 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Dec 30 15:12:37 2023
+
+@author: arnau
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from time import time
+
+from sklearn.datasets import make_classification
+
+from functions import *
+
+dim = 2
+n_samples = 10000
+noise = 0.1
+size = 100
+al = 0.1
+errw = 0.5
+it = 10
+rep = 1
+lb = 0
+ub = 2
+binary=False
+threshold=0.5
+
+data, labels = make_classification(n_samples=n_samples,n_features=2, n_redundant=0, n_informative=2, n_clusters_per_class=1,n_classes=3)
+data_aux = []
+for i in range(len(labels)):
+    data_aux.append([data[i][0], data[i][1]])
+    data_aux[i].append(labels[i])
+data = np.array(data_aux)
+print(set(labels))
+data, sample, rem, out_hull = initialize_sample(data,size,dim,rep)
+
+colors_rem = []
+colors_sample = []
+for i in range(len(rem)):
+    if data[rem[i]][2] >= 4/3:
+        colors_rem.append('r')
+    elif data[rem[i]][2] >= 2/3:
+        colors_rem.append('b')
+    else:
+        colors_rem.append('g')
+for i in range(len(sample)):
+    if data[sample[i]][2] >= 4/3:
+        colors_sample.append('r')
+    elif data[sample[i]][2] >= 2/3:
+        colors_sample.append('b')
+    else:
+        colors_sample.append('g')
+fig0 =  plt.figure(figsize = (10,7))
+ax0 = fig0.add_subplot()
+ax0.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color=colors_rem)
+ax0.scatter(data[sample][:,0],data[sample][:,1],s=100,color = colors_sample)
+plt.show()
+
+print("Iteration\t LSQF error\t Estimated error\t Error variance\t Real error")
+tri, e, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
+
+fig1 = plt.figure()
+ax1 = fig1.add_subplot()
+ax1.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "red")
+ax1.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "red")
+ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
+
+
+start = time()
+tri, e, err =  movepoints(data,sample,rem,out_hull,dim,it,al,errw,lb,ub,binary,threshold)
+end = time()
+print("Total time: ",end-start)
+
+ax1.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "blue")
+ax1.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "blue")
+ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
+plt.show()
+
+colors = []
+for i in range(len(sample)):
+    if data[sample[i]][dim] >= 4/3:
+        colors.append('r')
+    elif data[sample[i]][dim]>=2/3:
+        colors.append('b')
+    else:
+        colors.append('g')
+fig2 =  plt.figure(figsize = (10,7))
+ax2 = fig2.add_subplot()
+ax2.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color=colors_rem)
+ax2.scatter(data[sample][:,0],data[sample][:,1],s=100, color = colors)
+ax2.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "black")
+plt.show()
