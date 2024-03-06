@@ -8,10 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from time import time
-import random
+import pandas as pd
 
-import sklearn
-from sklearn.datasets import make_circles, make_classification, make_moons
+from sklearn.datasets import make_circles, load_iris
 
 from functions import *
 
@@ -21,44 +20,65 @@ noise = 0.1
 size = 100
 al = 0.1 #DO NOT USE 0.5; DIFFERENT POINTS MAY LAND ON THE SAME SPOT!!!
 errw = 0.5
-it = 1
-rep = 1
+it = 20
+rep = 0
 lb = 0
 ub = 1
-binary=False
-threshold=0.5
+binary = False
+threshold = 0.5
 
 circles, labels = make_circles(n_samples=n_samples, noise=noise)
-data_aux = []
-for i in range(len(labels)):
-    data_aux.append([circles[i][0], circles[i][1]])
-    data_aux[i].append(labels[i])
-data = np.array(data_aux)
+data = np.array(circles, dtype=float)
+labels = np.array(labels, dtype=float)
 
-data, sample, rem, out_hull = initialize_sample(data,size,dim,rep)
-
-print("Iteration\t LSQF error\t Estimated error\t Error variance\t Real error")
-tri, e, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
-
+data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
 
 colors_rem = []
 colors_sample = []
 for i in range(len(rem)):
-    if data[rem[i]][2] >= threshold:
+    if labels[rem[i]] >= threshold:
         colors_rem.append('r')
     else:
         colors_rem.append('b')
 for i in range(len(sample)):
-    if data[sample[i]][dim] >= threshold:
+    if labels[sample[i]] >= threshold:
+        colors_sample.append('r')
+    else:
+        colors_sample.append('b')
+
+
+fig0 =  plt.figure(figsize = (10,7))
+ax0 = fig0.add_subplot()
+ax0.scatter(data[rem][:,0],data[rem][:,1],s=2,color=colors_rem)
+ax0.scatter(data[sample][:,0],data[sample][:,1],s=100,color = colors_sample)
+
+for i in range(len(sample)):
+    ax0.annotate(str(round(labels[sample[i]],2)),[data[sample[i]][0],data[sample[i]][1]])
+plt.show()
+
+
+tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+
+colors_rem = []
+colors_sample = []
+for i in range(len(rem)):
+    if labels[rem[i]] >= threshold:
+        colors_rem.append('r')
+    else:
+        colors_rem.append('b')
+for i in range(len(sample)):
+    if labels[sample[i]] >= threshold:
         colors_sample.append('r')
     else:
         colors_sample.append('b')
 
 fig0 =  plt.figure(figsize = (10,7))
 ax0 = fig0.add_subplot()
-ax0.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color=colors_rem)
+ax0.scatter(data[rem][:,0],data[rem][:,1],s=2,color=colors_rem)
 ax0.scatter(data[sample][:,0],data[sample][:,1],s=100,color = colors_sample)
 ax0.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "black")
+for i in range(len(sample)):
+    ax0.annotate(str(round(labels[sample[i]],2)),[data[sample[i]][0],data[sample[i]][1]])
 plt.show()
 
 
@@ -71,7 +91,7 @@ ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
 
 
 start = time()
-tri, e, err =  movepoints(data,sample,rem,out_hull,dim,it,al,errw,lb,ub,binary,threshold)
+tri, e, err, labels[sample] =  movepoints(data,labels,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold)
 end = time()
 print("Total time: ",end-start)
 
@@ -82,13 +102,15 @@ ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
 
 colors = []
 for i in range(len(sample)):
-    if data[sample[i]][dim] >= threshold:
+    if labels[sample[i]] >= threshold:
         colors.append('r')
     else:
         colors.append('b')
 fig2 =  plt.figure(figsize = (10,7))
 ax2 = fig2.add_subplot()
-ax2.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color=colors_rem)
+ax2.scatter(data[rem][:,0],data[rem][:,1],s=2,color=colors_rem)
 ax2.scatter(data[sample][:,0],data[sample][:,1],s=100,color = colors)
-#ax2.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "blue")
+ax2.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "black")
+for i in range(len(sample)):
+    ax2.annotate(str(round(labels[sample[i]],2)),[data[sample[i]][0],data[sample[i]][1]])
 plt.show()

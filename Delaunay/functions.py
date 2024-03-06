@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.sparse import dok_array
 from scipy.spatial import Delaunay, ConvexHull
 from scipy.optimize import lsq_linear, nnls
 import random
@@ -10,7 +11,7 @@ def f(x,y):
     """
     return np.exp(-x*x)*np.sin(y)
 
-def refine(data,dim,rep=1):
+def refine(data,labels,dim,rep=1):
     """
     Adds points to the convex hull.
 
@@ -27,8 +28,10 @@ def refine(data,dim,rep=1):
         - L: length of in_hull.
     """
     #THIS NEEDS TO BE ADAPTED TO >2 DIMENSIONS!!!
-    hull = ConvexHull(data[:,0:dim])
+    hull = ConvexHull(data)
     hull = list(hull.vertices)
+    nohull = [i for i in range(len(data)) if i not in hull]
+    new_labels = np.array(np.concatenate([labels[hull],labels[nohull]]))
     in_hull_data = [list(data[i]) for i in hull]
     L = len(in_hull_data)
     out_hull_data = np.array([data[i] for i in range(len(data)) if i not in hull])
@@ -46,9 +49,10 @@ def refine(data,dim,rep=1):
     in_hull = [int(i) for i in range(L)]
     in_hull_data = np.array(in_hull_data)
     new_data = np.array(np.concatenate([in_hull_data,out_hull_data]))
-    return new_data, in_hull, L
+    
+    return new_data, new_labels, in_hull, L
 
-def initialize_sample(data,size,dim,rep=1):
+def initialize_sample(data,labels,size,dim,rep=1):
     """
     Refines the convex hull of data and selects sample to perform Delaunay triangulation.
 
@@ -64,7 +68,7 @@ def initialize_sample(data,size,dim,rep=1):
         - rem: labels of the data not selected for the sample.
         - out_hull: labels of the elements of sample not belonging to the convex hull.
     """
-    new_data, in_hull, L = refine(data,dim,rep)
+    new_data, new_labels, in_hull, L = refine(data,labels,dim,rep)
     length = len(new_data)
     sample = random.sample([int(i) for i in range(L,length)],max(0,size-L))
     sample = np.concatenate([in_hull,sample])
@@ -75,7 +79,7 @@ def initialize_sample(data,size,dim,rep=1):
         out_hull = list(range(L,size))
     else:
         out_hull = []
-    return new_data, sample, rem, out_hull
+    return new_data, new_labels, sample, rem, out_hull
 
 def adjacency(tri, out_hull):
     """
@@ -103,7 +107,7 @@ def adjacency(tri, out_hull):
        adj[key] = list(set(adj[key]))    
     return adj
 
-def subtesselate(data,sample,rem,dim):
+def subtesselate(data,sample,dim):
     
     """ 
     Builds the Delaunay triangulation from a subsample of points containing the convex hull 
@@ -122,7 +126,7 @@ def subtesselate(data,sample,rem,dim):
     tri = Delaunay(data[sample])
     bc = []
     
-    for i in rem:
+    for i in range(len(data)):
         point = data[i]
         triangle = tri.find_simplex(point)
         b = tri.transform[triangle,:dim].dot(np.transpose(point - tri.transform[triangle,dim]))
@@ -131,7 +135,7 @@ def subtesselate(data,sample,rem,dim):
     return tri, bc
 
 
-def compute_eq_parameters(data, tri, rem, sample, bc, dim):
+def compute_eq_parameters(data, tri, sample, labels, bc, dim):
     """
     Computes the matrix and the column from which to estimate the labels of the points of the triangulation.
 
@@ -146,13 +150,12 @@ def compute_eq_parameters(data, tri, rem, sample, bc, dim):
     Returns:
         - A, B: the matrices that describe the least squares problem: ||Ax-B||**2=0.
     """
-    B = data[rem][:,dim]
-    A = np.zeros((len(rem),len(sample)))
-    for i in range(len(rem)):
+    B = labels
+    A = dok_array((len(data),len(sample)), dtype=np.float32)
+    for i in range(len(data)):
         x = bc[i][1:(dim+3)]            #We extract index and barycentric coordinates of the i-th remaining point
         y = tri.simplices[int(x[0])]    #We extract the points of the triangulation containing the i-th remaining point
-        for j in range(dim+1):
-            A[i][y[j]] = x[j+1]
+        A[i,y] = x[1:dim+2]
     return A, B
                 
 def movepoints_step(data, sample, out_hull, tri, err, dim, al, errw=0.5):
@@ -179,7 +182,7 @@ def movepoints_step(data, sample, out_hull, tri, err, dim, al, errw=0.5):
     disin = np.zeros(L)
     for i in range(L):
         errin[i] = sample[adj[out_hull[i]][np.argmax([(err[j]-err[out_hull[i]]) for j in adj[out_hull[i]]])]]
-        disin[i] = sample[adj[out_hull[i]][np.argmax([sum((data[sample[j]][0:dim]-data[sample[out_hull[i]]][0:dim])**2) for j in adj[out_hull[i]]])]]
+        disin[i] = sample[adj[out_hull[i]][np.argmax([sum((data[sample[j]]-data[sample[out_hull[i]]])**2) for j in adj[out_hull[i]]])]]
     errin = [int(i) for i in errin]
     disin = [int(i) for i in disin]
     data[sample[out_hull]] += al*(errw*(data[errin]-data[sample[out_hull]])+(1-errw)*(data[disin]-data[sample[out_hull]]))
@@ -187,9 +190,9 @@ def movepoints_step(data, sample, out_hull, tri, err, dim, al, errw=0.5):
     print('Time to move points: '+str(end-start))
     return None
 
-    
 
-def delaunayization(data,sample,rem,dim,lb=-np.inf,ub=np.inf,binary=False,threshold=0.5):
+
+def delaunayization(data,sample,labels,dim,lb=-np.inf,ub=np.inf,binary=False,threshold=0.5):
     """
     Performs Delaunay triangulation, computes barycentric coordinates, estimates labels and estimates error.
 
@@ -208,33 +211,26 @@ def delaunayization(data,sample,rem,dim,lb=-np.inf,ub=np.inf,binary=False,thresh
         - e: array with least square residuals.
         - err: array with estimated errors.
     """
-    tri, bc = subtesselate(data[:,0:dim],sample,rem,dim)
-    A, B = compute_eq_parameters(data, tri, rem, sample, bc, dim)
+    tri, bc = subtesselate(data,sample,dim)
+    A, B = compute_eq_parameters(data, tri, sample, labels, bc, dim)
 
-    #Linear problem
     start = time()
-    #When there are no bounds, there are values that explode; in this case, since A is sparse (dim+1<<len(sample)), we set lsq_solver='lsmr'
-    if lb>-np.inf and ub<np.inf:
-        lsq_solver = None
-    else:
-        lsq_solver='lsmr'
-    sol = lsq_linear(A,B,bounds=(lb,ub),lsq_solver=lsq_solver)
+    y = lsq_linear(A,B,bounds=(lb,ub),lsq_solver='lsmr')['x']
     end = time()
     print('Time to solve lsqfit: '+str(end-start))
-    y = sol['x']
     if binary == True:
         y = (1+np.sign(y-threshold))/2
-    e = abs(np.matmul(A,y)-B)
-    data[sample][:,dim] = y
 
-    #Quadratic problem (||Ax-b||^2=0,x>=0)
+    e = abs(np.matmul(A.todense(),y)-B)
+
     start = time()
-    err = nnls(A,e)[0] #Faster than lsq_linear
+    err = nnls(A.todense(),e)[0] #Faster than lsq_linear
     end = time()
     print('Time to solve quadratic: '+str(end-start))
-    return tri, e, err
 
-def movepoints(data,sample,rem,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.inf,binary=False,threshold=0.5):
+    return tri, e, err, y
+
+def movepoints(data,labels,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.inf,binary=False,threshold=0.5):
     """
     Performs the estimation of labels and movement of points as many times as indicated.
     Also writes, for each iteration: the sum of estimated errors, the sum of the squared residuals, the variance of the estimated
@@ -259,26 +255,16 @@ def movepoints(data,sample,rem,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.inf,
         - e: final residuals of least squares.
         - err: final estimated errors.
     """
-    esterrs, lsqferrs, sigmas, rerrs = [], [], [], []
+    avs, sigmas, maxs = [], [], []
+    print("Iteration\t Mean error\t Error variance\t Maximum error")
     for i in range(it):
         try:
-            tri, e, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
-            errav = sum(err)/len(sample)
-            sigma = 0
-            for j in range(len(err)):
-                sigma += err[j]*err[j]
-            sigma = np.sqrt(sigma/len(err) - errav*errav)
-            esterr = sum(err)
-            lsqferr = sum(e)
-            rerr = 0
-            for j in range(len(sample)):
-                rerr += abs(data[sample[j]][dim]-f(data[sample[j]][0],data[sample[j]][1]))
-            rerrs.append(rerr)
-            esterrs.append(esterr)
-            lsqferrs.append(lsqferr)
-            sigmas.append(sigma)
+            tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+            avs.append(sum(e)/len(data))
+            sigmas.append(np.sqrt(sum(e*e)/len(e) - avs[i]*avs[i]))
+            maxs.append(max(e))
 
-            print(i,esterr,lsqferr,sigma,rerr)
+            print(i,avs[i],sigmas[i],maxs[i])
             
 
             movepoints_step(data, sample, out_hull, tri, err, dim, al, errw)
@@ -286,19 +272,16 @@ def movepoints(data,sample,rem,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.inf,
         except Exception as e:
             print(e)
 
-    tri, e, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
-    fsigmas = open("sigmas.txt","w")
-    festerrs = open("esterrs.txt","w")
-    flsqferrs = open("lsqferrs.txt","w")
-    frerrs = open("rerrs.txt","w")
+    tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+    favs = open("errors/avs.txt","w")
+    fsigmas = open("errors/sigmas.txt","w")
+    fmaxs= open("errors/maxs.txt","w")
     for i in range(it-1):
+        favs.write(str(avs[i])+"\t")
         fsigmas.write(str(sigmas[i])+"\t")
-        festerrs.write(str(esterrs[i])+"\t")
-        flsqferrs.write(str(lsqferrs[i])+"\t")
-        frerrs.write(str(rerrs[i])+"\t")
+        fmaxs.write(str(maxs[i])+"\t")
+    favs.close()
     fsigmas.close()
-    festerrs.close()
-    flsqferrs.close()
-    frerrs.close()
+    fmaxs.close()
 
-    return tri, e, err
+    return tri, e, err, labels[sample]

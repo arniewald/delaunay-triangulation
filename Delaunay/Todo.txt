@@ -8,9 +8,15 @@ Predict new points
 Non-euclidean distances
 
 05/2/24
-Apply algorithm to paper dataset
-Vectorialize
+Visualize 3D simplices
+Try in 3d -> I don't think it is working, incoherent results again for Iris (for Classification it does not look like it)
+If 3d works, dataset petals (quit width of cepal). If that works, use full dataset (R4): Iris dataset (from sklearn).
+    - Use one third of points to triangulate
+    - First try one class versus the others
+    - Implement multiple label classificator (triangle instead of segment)
+Study errors of training points
+
+
 Add points to convex hull edges (extend to n dimensions)
-No 3d plot, 2d with colors
-Change function of quadratic problem
 Put outliers (after repairing code)
+Try flux by angles (opposite to biggest angle, direction normal to opposite edge)

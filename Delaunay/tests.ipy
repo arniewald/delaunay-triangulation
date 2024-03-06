@@ -1,0 +1,135 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Dec 30 15:12:37 2023
+
+@author: arnau
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from time import time
+import pandas as pd
+import random
+
+from sklearn.datasets import make_circles
+
+from functions import *
+
+dim = 2
+n_samples = 10000
+noise = 0.1
+size = 100
+al = 0.1 #DO NOT USE 0.5; DIFFERENT POINTS MAY LAND ON THE SAME SPOT!!!
+errw = 0
+it = 1
+rep = 0
+lb = 0
+ub = 1
+binary = False
+threshold = 0.5
+
+random.seed(0)
+circles, labels = make_circles(n_samples=n_samples, noise=noise, random_state=0)
+data_aux = []
+for i in range(len(labels)):
+    data_aux.append([circles[i][0], circles[i][1]])
+    data_aux[i].append(labels[i])
+data = np.array(data_aux)
+
+data, sample, rem, out_hull = initialize_sample(data,size,dim,rep)
+print("Iteration\t Estimated error\t LSQF error\t Error variance\t Real error")
+tri, e, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
+
+datatri0 = tri.simplices.copy()
+for i in range(len(datatri0)):
+    for j in range(dim+1):
+        datatri0[i][j] = sample[datatri0[i][j]]
+dftri0 = pd.DataFrame(datatri0,columns=['v1','v2','v3'])
+dftri0.to_csv('triangulation_initial.csv')
+
+#DataFrame schema: x0, y0, z0, Type, Out_hull, dx, dy, x1, y1, z1
+df0 = pd.DataFrame(data,columns=['x','y','z'])
+df0['Type'] = np.where(df0.index.isin(sample),'sample','rem')
+df0['Out_hull'] = np.where(df0.Type == 'sample',np.where(df0.index.isin(sample[out_hull]),True, False),False)
+df0.to_csv('circles_initial.csv')
+
+colors_rem = []
+colors_sample = []
+for i in range(len(rem)):
+    if data[rem[i]][2] >= threshold:
+        colors_rem.append('r')
+    else:
+        colors_rem.append('b')
+for i in range(len(sample)):
+    if data[sample[i]][dim] >= threshold:
+        colors_sample.append('r')
+    else:
+        colors_sample.append('b')
+
+fig0 =  plt.figure(figsize = (10,7))
+ax0 = fig0.add_subplot()
+ax0.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.5,color=colors_rem)
+ax0.scatter(data[sample][:,0],data[sample][:,1],s=100,color = colors_sample)
+ax0.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "black")
+for i in range(len(sample)):
+    ax0.annotate('('+str(i)+','+str(round(data[sample[i]][dim],2))+')',[data[sample[i]][0],data[sample[i]][1]])
+plt.show()
+
+fig1 = plt.figure()
+ax1 = fig1.add_subplot()
+ax1.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "red")
+ax1.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "red")
+ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
+
+L = len(out_hull)
+adj = adjacency(tri,out_hull)
+errin = np.zeros(L)
+disin = np.zeros(L)
+for i in range(L):
+    errin[i] = sample[adj[out_hull[i]][np.argmax([(err[j]-err[out_hull[i]]) for j in adj[out_hull[i]]])]]
+    disin[i] = sample[adj[out_hull[i]][np.argmax([sum((data[sample[j]][0:dim]-data[sample[out_hull[i]]][0:dim])**2) for j in adj[out_hull[i]]])]]
+errin = [int(i) for i in errin]
+disin = [int(i) for i in disin]
+dx = np.array(al*(errw*(data[errin]-data[sample[out_hull]])+(1-errw)*(data[disin]-data[sample[out_hull]])))[:,0]
+dy = np.array(al*(errw*(data[errin]-data[sample[out_hull]])+(1-errw)*(data[disin]-data[sample[out_hull]])))[:,1]
+print(dx)
+data[sample[out_hull]] += al*(errw*(data[errin]-data[sample[out_hull]])+(1-errw)*(data[disin]-data[sample[out_hull]]))
+data_incr = np.zeros((len(out_hull),3))
+for i in range(len(out_hull)):
+    data_incr[i] = [int(sample[out_hull[i]]),dx[i],dy[i]]
+
+ax1.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "blue")
+ax1.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "blue")
+ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
+#DataFrame schema: label, dx, dy
+df1 = pd.DataFrame(data_incr,columns=['label','dx','dy'])
+df1.label = df1.label.astype(int)
+df1.to_csv('increments.csv')
+
+tri, e, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
+datatri1 = tri.simplices.copy()
+for i in range(len(datatri1)):
+    for j in range(dim+1):
+        datatri1[i][j] = sample[datatri1[i][j]]
+dftri1 = pd.DataFrame(datatri1,columns=['v1','v2','v3'])
+dftri1.to_csv('triangulation_final.csv')
+#DataFrame schema: x1, y1, z1, Type, Out_hull
+df2 = pd.DataFrame(data,columns=['x','y','z'])
+df2['Type'] = np.where(df2.index.isin(sample),'sample','rem')
+df2['Out_hull'] = np.where(df2.Type == 'sample',np.where(df2.index.isin(sample[out_hull]),True, False),False)
+df2.to_csv('circles_final.csv')
+
+colors = []
+for i in range(len(sample)):
+    if data[sample[i]][dim] >= threshold:
+        colors.append('r')
+    else:
+        colors.append('b')
+fig2 =  plt.figure(figsize = (10,7))
+ax2 = fig2.add_subplot()
+ax2.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.5,color=colors_rem)
+ax2.scatter(data[sample][:,0],data[sample][:,1],s=100,color = colors)
+ax2.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "black")
+for i in range(len(sample)):
+    ax2.annotate(str(round(data[sample[i]][0],2))+','+str(round(data[sample[i]][1],2)),[data[sample[i]][0],data[sample[i]][1]])
+plt.show()

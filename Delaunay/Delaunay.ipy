@@ -34,7 +34,7 @@ for i in range(len(data)):
 data = np.array(data_aux)
 
 data, sample, rem, out_hull = initialize_sample(data,size,dim,rep)
-print("Iteration\t LSQF error\t Estimated error\t Error variance\t Real error")
+
 tri, e, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
 
 fig0 = plt.figure()

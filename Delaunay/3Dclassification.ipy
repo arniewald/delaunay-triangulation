@@ -1,0 +1,99 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Dec 30 15:12:37 2023
+
+@author: arnau
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from time import time
+#from mayavi import mlab
+
+from sklearn.datasets import make_classification
+
+from functions import *
+
+dim = 3
+n_samples = 10000
+noise = 0.1
+size = 100
+al = 0.1
+errw = 0.5
+it = 20
+rep = 0
+lb = 0
+ub = 1
+binary=False
+threshold=0.5
+
+data, labels = make_classification(n_samples=n_samples,n_features=3, n_redundant=0, n_informative=2, n_clusters_per_class=1,n_classes=2)
+data = np.array(data, dtype=float)
+labels = np.array(labels, dtype=float)
+data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
+
+colors_rem = []
+colors_sample = []
+for i in range(len(rem)):
+    if labels[rem[i]] >= threshold:
+        colors_rem.append('r')
+    else:
+        colors_rem.append('b')
+for i in range(len(sample)):
+    if labels[sample[i]] >= threshold:
+        colors_sample.append('r')
+    else:
+        colors_sample.append('b')
+
+fig0 =  plt.figure(figsize = (10,7))
+ax0 = fig0.add_subplot(111, projection='3d')
+ax0.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
+ax0.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors_sample)
+
+
+tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+
+colors_rem = []
+colors_sample = []
+for i in range(len(rem)):
+    if labels[rem[i]] >= threshold:
+        colors_rem.append('r')
+    else:
+        colors_rem.append('b')
+for i in range(len(sample)):
+    if labels[sample[i]] >= threshold:
+        colors_sample.append('r')
+    else:
+        colors_sample.append('b')
+
+fig1 =  plt.figure(figsize = (10,7))
+ax1 = fig1.add_subplot(111, projection='3d')
+ax1.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
+ax1.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors_sample)
+ax1.plot_trisurf(data[sample][:,0],data[sample][:,1],data[sample][:,2], triangles=tri.simplices, alpha=0.5)
+
+start = time()
+tri, e, err, labels[sample] =  movepoints(data,labels,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold)
+end = time()
+print("Total time: ",end-start)
+
+"""ax1.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "blue")
+ax1.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "blue")
+ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
+plt.show()"""
+
+colors = []
+for i in range(len(sample)):
+    if labels[sample[i]] >= 4/3:
+        colors.append('g')
+    elif labels[sample[i]]>=2/3:
+        colors.append('r')
+    else:
+        colors.append('b')
+fig2 =  plt.figure(figsize = (10,7))
+ax2 = fig2.add_subplot(111, projection='3d')
+ax2.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
+ax2.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors)
+ax2.plot_trisurf(data[sample][:,0],data[sample][:,1],data[sample][:,2], triangles=tri.simplices, alpha=0.5)
+for i in range(len(sample)):
+    ax2.text(data[sample[i]][0],data[sample[i]][1],data[sample[i]][2],str(round(labels[sample[i]],2)))
+plt.show()
