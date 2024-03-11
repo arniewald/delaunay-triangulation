@@ -8,6 +8,7 @@ Predict new points
 Non-euclidean distances
 
 05/2/24
+IMAGES, VIDEOS, ERROR PLOTS!!!!!!!
 Visualize 3D simplices
 Try in 3d -> I don't think it is working, incoherent results again for Iris (for Classification it does not look like it)
 If 3d works, dataset petals (quit width of cepal). If that works, use full dataset (R4): Iris dataset (from sklearn).
@@ -15,7 +16,7 @@ If 3d works, dataset petals (quit width of cepal). If that works, use full datas
     - First try one class versus the others
     - Implement multiple label classificator (triangle instead of segment)
 Study errors of training points
-
+Try taking some real points, add them later and see if they match their original value
 
 Add points to convex hull edges (extend to n dimensions)
 Put outliers (after repairing code)

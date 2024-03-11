@@ -1,0 +1,105 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+from sklearn.datasets import load_iris
+
+from moviepy.editor import VideoClip
+from moviepy.video.io.bindings import mplfig_to_npimage
+
+from functions import *
+
+title = 'media/moving_points_iris3D_binarystart.webm'
+sizerr=False
+dim = 3
+size = 50
+test_size = 20
+al = 0.1
+errw = 0.5
+it = 20
+rep = 0
+lb = 0
+ub = 2
+binary=False
+threshold=0.5
+
+iris = load_iris(as_frame=True)['frame']
+#We discard cepal width
+iris = iris[['sepal length (cm)','petal length (cm)', 'petal width (cm)','target']]
+#There is repeated data since we are removing a feature, so we remove duplicates
+iris.drop_duplicates(inplace=True)
+data = iris[['sepal length (cm)','petal length (cm)', 'petal width (cm)']].to_numpy()
+data = np.array(data, dtype=float)
+labels = iris['target'].to_numpy()
+labels = np.array(labels, dtype=float)
+
+ub = 1
+for i in range(len(labels)):
+    if labels[i] == 2:
+        labels[i] = 1
+filename = 'Iris3D_binarystart'
+
+data, labels, test_data, test_labels = sample_to_test(data,labels,test_size)
+data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
+tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+tri_colors = ['b','r','g']
+colors_rem = []
+for i in range(len(rem)):
+    if labels[rem[i]] >= 4/3:
+        colors_rem.append('g')
+    elif labels[rem[i]] >= 2/3:
+        colors_rem.append('r')
+    else:
+        colors_rem.append('b')
+
+
+fig =  plt.figure(figsize = (10,7))
+ax = fig.add_subplot(111, projection='3d')
+
+def make_frame(t):
+     
+    # clear
+    ax.clear()
+    tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+    movepoints_step(data, sample, out_hull, tri, err, dim, al, errw=0.5)
+    tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+    
+    colors = []
+    for i in range(len(sample)):
+        if labels[sample[i]] >= 4/3:
+            colors.append('g')
+        elif labels[sample[i]]>=2/3:
+            colors.append('r')
+        else:
+            colors.append('b')
+    ax.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
+    ax.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors)
+    for i in range(len(sample)):
+        ax.text(data[sample[i]][0],data[sample[i]][1],data[sample[i]][2],str(round(labels[sample[i]],2)))
+    for triangle in range(len(tri.simplices)):
+            tr = tri.simplices[triangle]
+            ll = [labels[rem[i]] for i in range(len(rem)) if tri.find_simplex(data[rem[i]])==triangle]
+            if len(ll)!=0:
+                color = tri_colors[math.floor(sum(ll)/len(ll))]
+                lw = '1'
+            else:
+                color = 'black'
+                lw = '0.5'
+            pts = data[sample[tr], :]
+            ax.plot3D(pts[[0,1],0], pts[[0,1],1], pts[[0,1],2], color=color, lw=lw, alpha = 0.1)
+            ax.plot3D(pts[[0,2],0], pts[[0,2],1], pts[[0,2],2], color=color, lw=lw, alpha = 0.1)
+            ax.plot3D(pts[[0,3],0], pts[[0,3],1], pts[[0,3],2], color=color, lw=lw, alpha = 0.1)
+            ax.plot3D(pts[[1,2],0], pts[[1,2],1], pts[[1,2],2], color=color, lw=lw, alpha = 0.1)
+            ax.plot3D(pts[[1,3],0], pts[[1,3],1], pts[[1,3],2], color=color, lw=lw, alpha = 0.1)
+            ax.plot3D(pts[[2,3],0], pts[[2,3],1], pts[[2,3],2], color=color, lw=lw, alpha = 0.1)
+
+    ax.set_title(str(t))
+    # returning numpy image
+    return mplfig_to_npimage(fig)
+ 
+# creating animation
+animation = VideoClip(make_frame, duration = it)
+ 
+animation.write_videofile(title,fps=5)
+""" # displaying animation with auto play and looping
+animation.ipython_display(fps = 20, loop = True, autoplay = True) """

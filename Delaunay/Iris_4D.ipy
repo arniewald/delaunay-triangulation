@@ -13,6 +13,7 @@ from sklearn.datasets import load_iris
 
 from functions import *
 
+#Variables
 dim = 4
 al = 0.1
 errw = 0.5
@@ -22,6 +23,7 @@ lb = 0
 ub = 2
 binary=False
 threshold=0.5
+filename = '_Iris4D'
 
 iris = load_iris()
 data = iris['data']
@@ -82,7 +84,7 @@ for i in range(len(sample)):
     ax1.text(data[sample[i]][0],data[sample[i]][1],data[sample[i]][2],str(round(labels[sample[i]],2)))
 
 start = time()
-tri, e, err, labels[sample] =  movepoints(data,labels,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold)
+tri, e, err, labels[sample] =  movepoints(data,labels,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold,filename)
 end = time()
 print("Total time: ",end-start)
 

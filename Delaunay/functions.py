@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from scipy.sparse import dok_array
 from scipy.spatial import Delaunay, ConvexHull
 from scipy.optimize import lsq_linear, nnls
@@ -181,8 +182,13 @@ def movepoints_step(data, sample, out_hull, tri, err, dim, al, errw=0.5):
     errin = np.zeros(L)
     disin = np.zeros(L)
     for i in range(L):
-        errin[i] = sample[adj[out_hull[i]][np.argmax([(err[j]-err[out_hull[i]]) for j in adj[out_hull[i]]])]]
-        disin[i] = sample[adj[out_hull[i]][np.argmax([sum((data[sample[j]]-data[sample[out_hull[i]]])**2) for j in adj[out_hull[i]]])]]
+        try:
+            errin[i] = sample[adj[out_hull[i]][np.argmax([(err[j]-err[out_hull[i]]) for j in adj[out_hull[i]]])]]
+            disin[i] = sample[adj[out_hull[i]][np.argmax([sum((data[sample[j]]-data[sample[out_hull[i]]])**2) for j in adj[out_hull[i]]])]]
+        except Exception as e:
+            print("Exception at node ",sample[out_hull[i]],": ",adj[out_hull[i]])
+            print("Exception: ",e)
+
     errin = [int(i) for i in errin]
     disin = [int(i) for i in disin]
     data[sample[out_hull]] += al*(errw*(data[errin]-data[sample[out_hull]])+(1-errw)*(data[disin]-data[sample[out_hull]]))
@@ -230,7 +236,7 @@ def delaunayization(data,sample,labels,dim,lb=-np.inf,ub=np.inf,binary=False,thr
 
     return tri, e, err, y
 
-def movepoints(data,labels,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.inf,binary=False,threshold=0.5):
+def movepoints(data,labels,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.inf,binary=False,threshold=0.5,filename = ""):
     """
     Performs the estimation of labels and movement of points as many times as indicated.
     Also writes, for each iteration: the sum of estimated errors, the sum of the squared residuals, the variance of the estimated
@@ -270,12 +276,13 @@ def movepoints(data,labels,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.i
             movepoints_step(data, sample, out_hull, tri, err, dim, al, errw)
 
         except Exception as e:
-            print(e)
+            print("Exception at time ",i,":",e)
+            break
 
     tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
-    favs = open("errors/avs.txt","w")
-    fsigmas = open("errors/sigmas.txt","w")
-    fmaxs= open("errors/maxs.txt","w")
+    favs = open("errors/avs"+filename+".txt","w")
+    fsigmas = open("errors/sigmas"+filename+".txt","w")
+    fmaxs= open("errors/maxs"+filename+".txt","w")
     for i in range(it-1):
         favs.write(str(avs[i])+"\t")
         fsigmas.write(str(sigmas[i])+"\t")
@@ -285,3 +292,40 @@ def movepoints(data,labels,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.i
     fmaxs.close()
 
     return tri, e, err, labels[sample]
+
+def sample_to_test(data,labels,size):
+    hull = ConvexHull(data)
+    hull = list(hull.vertices)
+    indices = random.sample([int(i) for i in range(len(data)) if i not in hull],size)
+    test_data = data[indices]
+    test_labels = labels[indices]
+    rem_data = data[[i for i in range(len(data)) if i not in indices]]
+    rem_labels = labels[[i for i in range(len(data)) if i not in indices]]
+    return rem_data, rem_labels, test_data, test_labels
+
+def classify(points, dim, tri, trilabels, threshold=0.5, real=None):
+    #For the time being this is a binary classificator
+    bc = []
+    for i in range(len(points)):
+        point = points[i]
+        triangle = tri.find_simplex(point)
+        b = tri.transform[triangle,:dim].dot(np.transpose(point - tri.transform[triangle,dim]))
+        c = np.concatenate([b,[1-sum(b)]])
+        bc.append(np.concatenate([[int(i),int(triangle)],c]))
+    
+    A = np.zeros((len(points),len(trilabels)),np.float32)
+    for i in range(len(points)):
+        x = bc[i][1:(dim+3)]            #We extract index and barycentric coordinates of the i-th remaining point
+        y = tri.simplices[int(x[0])]    #We extract the points of the triangulation containing the i-th remaining point
+        A[i,y] = x[1:dim+2]
+    targets = np.matmul(A,np.array(trilabels))
+    #Only 0 or 1 even if there are more possible labels
+    targets = np.array([min(1,math.floor(target/threshold)) for target in targets])
+
+    if real.any()!=None:
+        errors = np.abs(targets-real)
+        correct = [i for i in range(len(targets)) if errors[i]<=0]
+        incorrect = [i for i in range(len(targets)) if errors[i]>0]
+        return targets, errors, correct, incorrect
+    else:
+        return targets
