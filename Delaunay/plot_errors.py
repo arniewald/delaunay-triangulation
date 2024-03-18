@@ -1,13 +1,12 @@
 import matplotlib.pyplot as plt
 
-
-fig, axs = plt.subplots(3,1,figsize=(6, 6))
+folder = "Delaunay/errors/"
+files = ["avs","sigmas","maxs","evars","rerrs"]
+sufix = 'Iris4D_binarystart_errw0.txt'
+files = [folder+f+sufix for f in files]
+titles = ['Mean error' + sufix,"Error variance", "Maximum error","Edge variance","Real error"]
+fig, axs = plt.subplots(len(files),1,figsize=(6, 6))
 fig.tight_layout()
-folder = "errors/"
-files = ["avs.txt","sigmas.txt","maxs.txt"]
-files = [folder+f for f in files]
-titles = ['Mean error',"Error variance", "Maximum error"]
-
 
 for i in range(len(files)):
     file = open(files[i],"r")

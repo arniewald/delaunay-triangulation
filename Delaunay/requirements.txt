@@ -1,0 +1,8 @@
+numpy
+matplotlib
+pandas
+sklearn
+moviepy
+scipy
+mpl_toolkits
+statsmodels

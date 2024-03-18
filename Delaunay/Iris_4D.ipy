@@ -15,23 +15,38 @@ from functions import *
 
 #Variables
 dim = 4
+size = 75
+test_size = 20
 al = 0.1
-errw = 0.5
-it = 5
+errw = 0
+it = 60
 rep = 0
 lb = 0
 ub = 2
 binary=False
 threshold=0.5
-filename = '_Iris4D'
 
 iris = load_iris()
 data = iris['data']
 labels = np.array(iris['target'], dtype=float)
+filename = '_Iris4D_nobinarystart'
 
-data, labels, sample, rem, out_hull = initialize_sample(data,labels,math.floor(len(data)/3),dim,rep)
+#I do not exactly know how to do class vs no class; this function is here in case we want to do it BEFORE moving points
+ub = 1
+ref_label = 1
+for i in range(len(labels)):
+    if labels[i] == ref_label:
+        labels[i] = 0
+    else:
+        labels[i] = 1
+filename = 'Iris4D_binarystart_size75'
 
-print(labels[rem])
+random.seed(0)
+data, labels, test_data, test_labels = sample_to_test(data,labels,test_size)
+data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
+
+
+        
 
 colors_rem = []
 colors_sample = []
@@ -54,10 +69,12 @@ fig0 =  plt.figure(figsize = (10,7))
 ax0 = fig0.add_subplot(111, projection='3d')
 ax0.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
 ax0.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors_sample)
+ax0.scatter3D(data[sample[out_hull]][:,0],data[sample[out_hull]][:,1],data[sample[out_hull]][:,2],s=100,marker='x')
 for i in range(len(sample)):
     ax0.text(data[sample[i]][0],data[sample[i]][1],data[sample[i]][2],str(round(labels[sample[i]],2)))
+ax0.set_title('Original data')
 
-tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+tri, e, err, labels[sample] = delaunayization(data,rem,sample,labels,dim,lb,ub,binary,threshold)
 
 colors_rem = []
 colors_sample = []
@@ -79,16 +96,21 @@ fig1 =  plt.figure(figsize = (10,7))
 ax1 = fig1.add_subplot(111, projection='3d')
 ax1.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
 ax1.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors_sample)
-ax1.plot_trisurf(data[sample][:,0],data[sample][:,1],data[sample][:,2], triangles=tri.simplices, alpha=0.5)
+#ax1.plot_trisurf(data[sample][:,0],data[sample][:,1],data[sample][:,2], triangles=tri.simplices, alpha=0.5)
 for i in range(len(sample)):
     ax1.text(data[sample[i]][0],data[sample[i]][1],data[sample[i]][2],str(round(labels[sample[i]],2)))
+#plot_3Ddelaunay(data,labels,sample,rem,tri,ax1)
+ax1.set_title('First estimation')
 
 start = time()
-tri, e, err, labels[sample] =  movepoints(data,labels,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold,filename)
+tri, e, err, labels[sample] =  movepoints(data,labels,rem,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold,filename,test_data,test_labels)
 end = time()
 print("Total time: ",end-start)
 
-print(labels[rem])
+"""ax1.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "blue")
+ax1.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "blue")
+ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
+plt.show()"""
 
 colors = []
 for i in range(len(sample)):
@@ -103,8 +125,29 @@ fig2 =  plt.figure(figsize = (10,7))
 ax2 = fig2.add_subplot(111, projection='3d')
 ax2.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
 ax2.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors)
-ax2.plot_trisurf(data[sample][:,0],data[sample][:,1],data[sample][:,2], triangles=tri.simplices, alpha=0.5)
+#ax2.plot_trisurf(data[sample][:,0],data[sample][:,1],data[sample][:,2], triangles=tri.simplices, alpha=0.5)
 for i in range(len(sample)):
     ax2.text(data[sample[i]][0],data[sample[i]][1],data[sample[i]][2],str(round(labels[sample[i]],2)))
+ax2.set_title('After moving points')
+#plot_3Ddelaunay(data,labels,sample,rem,tri,ax2)
+
+targets, errors, correct, incorrect = classify(test_data, dim, tri, labels[sample], threshold=threshold, real=test_labels)
+print(errors)
+test_colors = []
+for i in range(len(test_labels)):
+    if test_labels[i] >= threshold:
+        test_colors.append('r')
+    else:
+        test_colors.append('b')
+
+fig3 =  plt.figure(figsize = (10,7))
+ax3 = fig3.add_subplot(111, projection='3d')
+ax3.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=10,color = colors,marker='^')
+ax3.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=1,color = colors_rem, alpha=0.1)
+ax3.scatter3D(test_data[correct][:,0],test_data[correct][:,1],test_data[correct][:,2],s=100,color = [test_colors[i] for i in correct],marker='o')
+ax3.scatter3D(test_data[incorrect][:,0],test_data[incorrect][:,1],test_data[incorrect][:,2],s=100,color = [test_colors[i] for i in incorrect],marker='x')
+plot_3Ddelaunay(data,labels,sample,rem,tri,ax3)
+ax3.set_title('Labels estimation')
+#fig3.savefig('media/'+filename+'.png')
 plt.show()
 

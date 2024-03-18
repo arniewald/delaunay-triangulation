@@ -9,7 +9,7 @@ from moviepy.video.io.bindings import mplfig_to_npimage
 
 from functions import *
 
-title = 'media/moving_points_iris3D_binarystart.webm'
+title = 'Delaunay/media/moving_points_iris3D_binarystart_1.webm'
 sizerr=False
 dim = 3
 size = 50
@@ -41,7 +41,7 @@ filename = 'Iris3D_binarystart'
 
 data, labels, test_data, test_labels = sample_to_test(data,labels,test_size)
 data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
-tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+tri, e, err, labels[sample] = delaunayization(data,rem,sample,labels,dim,lb,ub,binary,threshold)
 tri_colors = ['b','r','g']
 colors_rem = []
 for i in range(len(rem)):
@@ -60,9 +60,9 @@ def make_frame(t):
      
     # clear
     ax.clear()
-    tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+    tri, e, err, labels[sample] = delaunayization(data,rem,sample,labels,dim,lb,ub,binary,threshold)
     movepoints_step(data, sample, out_hull, tri, err, dim, al, errw=0.5)
-    tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+    tri, e, err, labels[sample] = delaunayization(data,rem,sample,labels,dim,lb,ub,binary,threshold)
     
     colors = []
     for i in range(len(sample)):

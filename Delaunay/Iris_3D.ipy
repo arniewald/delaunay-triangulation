@@ -19,7 +19,7 @@ size = 50
 test_size = 20
 al = 0.1
 errw = 0.5
-it = 20
+it = 100
 rep = 0
 lb = 0
 ub = 2
@@ -38,12 +38,15 @@ labels = np.array(labels, dtype=float)
 filename = '_Iris3D_nobinarystart'
 
 #I do not exactly know how to do class vs no class; this function is here in case we want to do it BEFORE moving points
-"""ub = 1
+ub = 1
+ref_label = 1
 for i in range(len(labels)):
-    if labels[i] == 2:
+    if labels[i] == ref_label:
+        labels[i] = 0
+    else:
         labels[i] = 1
 filename = 'Iris3D_binarystart'
-"""
+
 data, labels, test_data, test_labels = sample_to_test(data,labels,test_size)
 data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
 
@@ -76,7 +79,7 @@ for i in range(len(sample)):
     ax0.text(data[sample[i]][0],data[sample[i]][1],data[sample[i]][2],str(round(labels[sample[i]],2)))
 ax0.set_title('Original data')
 
-tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+tri, e, err, labels[sample] = delaunayization(data,rem,sample,labels,dim,lb,ub,binary,threshold)
 
 colors_rem = []
 colors_sample = []
@@ -101,18 +104,11 @@ ax1.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color 
 #ax1.plot_trisurf(data[sample][:,0],data[sample][:,1],data[sample][:,2], triangles=tri.simplices, alpha=0.5)
 for i in range(len(sample)):
     ax1.text(data[sample[i]][0],data[sample[i]][1],data[sample[i]][2],str(round(labels[sample[i]],2)))
-for tr in tri.simplices:
-        pts = data[sample[tr], :]
-        ax1.plot3D(pts[[0,1],0], pts[[0,1],1], pts[[0,1],2], color='black', lw='0.1')
-        ax1.plot3D(pts[[0,2],0], pts[[0,2],1], pts[[0,2],2], color='black', lw='0.1')
-        ax1.plot3D(pts[[0,3],0], pts[[0,3],1], pts[[0,3],2], color='black', lw='0.1')
-        ax1.plot3D(pts[[1,2],0], pts[[1,2],1], pts[[1,2],2], color='black', lw='0.1')
-        ax1.plot3D(pts[[1,3],0], pts[[1,3],1], pts[[1,3],2], color='black', lw='0.1')
-        ax1.plot3D(pts[[2,3],0], pts[[2,3],1], pts[[2,3],2], color='black', lw='0.1')
+#plot_3Ddelaunay(data,labels,sample,rem,tri,ax1)
 ax1.set_title('First estimation')
 
 start = time()
-tri, e, err, labels[sample] =  movepoints(data,labels,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold,filename)
+tri, e, err, labels[sample] =  movepoints(data,labels,rem,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold,filename)
 end = time()
 print("Total time: ",end-start)
 
@@ -138,24 +134,7 @@ ax2.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color 
 for i in range(len(sample)):
     ax2.text(data[sample[i]][0],data[sample[i]][1],data[sample[i]][2],str(round(labels[sample[i]],2)))
 ax2.set_title('After moving points')
-
-tri_colors = ['b','r','g']
-for triangle in range(len(tri.simplices)):
-        tr = tri.simplices[triangle]
-        ll = [labels[rem[i]] for i in range(len(rem)) if tri.find_simplex(data[rem[i]])==triangle]
-        if len(ll)!=0:
-            color = tri_colors[math.floor(sum(ll)/len(ll))]
-            lw = '1'
-        else:
-            color = 'black'
-            lw = '0.5'
-        pts = data[sample[tr], :]
-        ax2.plot3D(pts[[0,1],0], pts[[0,1],1], pts[[0,1],2], color=color, lw=lw, alpha = 0.1)
-        ax2.plot3D(pts[[0,2],0], pts[[0,2],1], pts[[0,2],2], color=color, lw=lw, alpha = 0.1)
-        ax2.plot3D(pts[[0,3],0], pts[[0,3],1], pts[[0,3],2], color=color, lw=lw, alpha = 0.1)
-        ax2.plot3D(pts[[1,2],0], pts[[1,2],1], pts[[1,2],2], color=color, lw=lw, alpha = 0.1)
-        ax2.plot3D(pts[[1,3],0], pts[[1,3],1], pts[[1,3],2], color=color, lw=lw, alpha = 0.1)
-        ax2.plot3D(pts[[2,3],0], pts[[2,3],1], pts[[2,3],2], color=color, lw=lw, alpha = 0.1)
+#plot_3Ddelaunay(data,labels,sample,rem,tri,ax2)
 
 targets, errors, correct, incorrect = classify(test_data, dim, tri, labels[sample], threshold=threshold, real=test_labels)
 print(errors)
@@ -172,23 +151,7 @@ ax3.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=10,color =
 ax3.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=1,color = colors_rem, alpha=0.1)
 ax3.scatter3D(test_data[correct][:,0],test_data[correct][:,1],test_data[correct][:,2],s=100,color = [test_colors[i] for i in correct],marker='o')
 ax3.scatter3D(test_data[incorrect][:,0],test_data[incorrect][:,1],test_data[incorrect][:,2],s=100,color = [test_colors[i] for i in incorrect],marker='x')
-tri_colors = ['b','r','g']
-for triangle in range(len(tri.simplices)):
-        tr = tri.simplices[triangle]
-        ll = [labels[rem[i]] for i in range(len(rem)) if tri.find_simplex(data[rem[i]])==triangle]
-        if len(ll)!=0:
-            color = tri_colors[math.floor(sum(ll)/len(ll))]
-            lw = '1'
-        else:
-            color = 'black'
-            lw = '0.5'
-        pts = data[sample[tr], :]
-        ax3.plot3D(pts[[0,1],0], pts[[0,1],1], pts[[0,1],2], color=color, lw=lw, alpha = 0.1)
-        ax3.plot3D(pts[[0,2],0], pts[[0,2],1], pts[[0,2],2], color=color, lw=lw, alpha = 0.1)
-        ax3.plot3D(pts[[0,3],0], pts[[0,3],1], pts[[0,3],2], color=color, lw=lw, alpha = 0.1)
-        ax3.plot3D(pts[[1,2],0], pts[[1,2],1], pts[[1,2],2], color=color, lw=lw, alpha = 0.1)
-        ax3.plot3D(pts[[1,3],0], pts[[1,3],1], pts[[1,3],2], color=color, lw=lw, alpha = 0.1)
-        ax3.plot3D(pts[[2,3],0], pts[[2,3],1], pts[[2,3],2], color=color, lw=lw, alpha = 0.1)
+#plot_3Ddelaunay(data,labels,sample,rem,tri,ax3)
 ax3.set_title('Labels estimation')
 #fig3.savefig('media/'+filename+'.png')
 plt.show()

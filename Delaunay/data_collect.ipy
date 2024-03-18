@@ -1,0 +1,58 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from time import time
+import pandas as pd
+
+from sklearn.datasets import make_classification
+
+from functions import *
+
+#Variables
+dim = 3
+n_samples = 10000
+noise = 0.1
+test_size = 1000
+al = 0.05
+it = 200
+rep = 0
+lb = 0
+ub = 1
+binary=False
+threshold=0.5
+
+sizes = [50,100,200,300,400,500,600,700,800,900,1000]
+errws = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+
+for size in sizes:
+    for errw in errws:
+        random.seed(0)
+        print(size, errw)
+        dfname = 'Delaunay/dataframes/3Dclass_'+str(size)+"_"+str(errw)+".csv" 
+        data, labels = make_classification(n_samples=n_samples,n_features=3, n_redundant=0, n_informative=2, n_clusters_per_class=1,n_classes=2,random_state=0)
+        data = np.array(data, dtype=float)
+        labels = np.array(labels, dtype=float)
+        data, labels, test_data, test_labels = sample_to_test(data,labels,test_size)
+        data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
+
+        tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+
+        avs, sigmas, evars, rerrs = [], [], [], []
+        print("Iteration\t Mean error\t Error variance\t Maximum error")
+        for i in range(it):
+            try:
+                tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+                avs.append(sum(e)/len(data))
+                sigmas.append(np.sqrt(sum(e*e)/len(e) - avs[i]*avs[i]))
+                evars.append(compute_edges_variance(data,dim,sample,tri))
+                rerrs.append(compute_real_error(test_data, dim, tri, labels[sample], threshold, test_labels))
+                print(size,errw,i,avs[i],sigmas[i],evars[i],rerrs[i])
+                movepoints_step(data, sample, out_hull, tri, err, dim, al, errw)
+
+            except Exception as e:
+                print("Exception at time ",i,":",e)
+                break
+
+        tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+        dfdict = {"avs":avs,"sigmas":sigmas,"evars":evars,"rerrs":rerrs}
+        df = pd.DataFrame(dfdict)
+        df.to_csv(dfname,index=False)

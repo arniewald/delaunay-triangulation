@@ -8,15 +8,17 @@ Predict new points
 Non-euclidean distances
 
 05/2/24
-IMAGES, VIDEOS, ERROR PLOTS!!!!!!!
+Compute mean error in each triangle and use threshold to add barycenters to triangulation; then, apply only distance flux. 
+^- Set nº iterations to add those points.
+Save rank checking, but return to full memory
+Check how separates the other classes.
+
 Visualize 3D simplices
 Try in 3d -> I don't think it is working, incoherent results again for Iris (for Classification it does not look like it)
 If 3d works, dataset petals (quit width of cepal). If that works, use full dataset (R4): Iris dataset (from sklearn).
     - Use one third of points to triangulate
     - First try one class versus the others
     - Implement multiple label classificator (triangle instead of segment)
-Study errors of training points
-Try taking some real points, add them later and see if they match their original value
 
 Add points to convex hull edges (extend to n dimensions)
 Put outliers (after repairing code)
