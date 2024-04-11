@@ -2,7 +2,8 @@ import numpy as np
 import math
 from scipy.sparse import dok_array
 from scipy.spatial import Delaunay, ConvexHull
-from scipy.optimize import lsq_linear, nnls
+from scipy.optimize import lsq_linear, nnls, minimize, LinearConstraint
+from scipy.linalg import block_diag
 import random
 from time import time
 
@@ -14,10 +15,11 @@ def f(x,y):
 
 def refine(data,labels,dim,rep=1):
     """
-    Adds points to the convex hull.
+    Deprecated. Adds points to the convex hull.
 
     Args:
         - data: data to which add the new points.
+        - labels: labels of the data.
         - dim: dimension of data
         - rep: number of refinements to perform, each adds the middle point 
                of each edge connecting two consecutive points of the convex hull.
@@ -59,6 +61,7 @@ def initialize_sample(data,labels,size,dim,rep=1):
 
     Args:
         - data: array with initial data.
+        - labels: labels of the data.
         - size: size of the desired sample. If convex hull is bigger, the sample will just contain the convex hull.
         - dim: dimension of data: each element of data has dim features and one label.
         - rep: number of times to refine the convex hull.
@@ -117,7 +120,6 @@ def subtesselate(data,sample,dim):
     Args: 
         - data: original set of points.
         - sample: points from which to compute the Delaunay triangulation.
-        - rem: points from which to compute the barycentric coordinates.
         - dim: dimension of the points of data.
     
     Returns:
@@ -136,28 +138,48 @@ def subtesselate(data,sample,dim):
     return tri, bc
 
 
-def compute_eq_parameters(data, tri, rem, sample, labels, bc, dim):
+def compute_eq_parameters(data, tri, sample, labels, bc, dim):
     """
     Computes the matrix and the column from which to estimate the labels of the points of the triangulation.
 
     Args:
         - data: array with data.
         - tri: Delaunay triangulation.
-        - rem: labels of data not belonging to the triangulation.
-        - sample: labels of data belonging to the triangulation.
+        - sample: indices of data belonging to the triangulation.
+        - labels: labels of the data.
         - bc: barycentric coordinates of the points indexated by rem.
         - dim: dimension of data.
     
     Returns:
         - A, B: the matrices that describe the least squares problem: ||Ax-B||**2=0.
     """
-    """B = labels
+    B = labels
     A = dok_array((len(data),len(sample)), dtype=np.float32)
     for i in range(len(data)):
         x = bc[i][1:(dim+3)]            #We extract index and barycentric coordinates of the i-th remaining point
         y = tri.simplices[int(x[0])]    #We extract the points of the triangulation containing the i-th remaining point
-        A[i,y] = x[1:dim+2] """
+        A[i,y] = x[1:dim+2]
+    return A, B
+
+
+
+def compute_eq_parameters_with_rank(data, tri, rem, sample, labels, bc, dim):
+    """
+    Computes the matrix and the column from which to estimate the labels of the points of the triangulation.
+    It only computes them so that the equation is not undetermined.
+
+    Args:
+        - data: array with data.
+        - tri: Delaunay triangulation.
+        - rem: indices of data not belonging to the triangulation.
+        - sample: indices of data belonging to the triangulation.
+        - labels: labels of the data.
+        - bc: barycentric coordinates of the points indexated by rem.
+        - dim: dimension of data.
     
+    Returns:
+        - A, B: the matrices that describe the least squares problem: ||Ax-B||**2=0.
+    """
     #Check what points of triangulation do not have equations
     appear = []
     for i in range(len(rem)):
@@ -188,48 +210,21 @@ def compute_eq_parameters(data, tri, rem, sample, labels, bc, dim):
     for i in range(L):
         A[i] = Aaux[i]
     B = np.array(B)
-
-    """ len_rem = len(rem)
-    A = dok_array((len_rem+len(to_add),len(sample)), dtype=np.float32)
-    for i in range(len_rem):
-        x = bc[rem[i]][1:(dim+3)]            #We extract index and barycentric coordinates of the i-th remaining point
-        y = tri.simplices[int(x[0])]    #We extract the points of the triangulation containing the i-th remaining point
-        A[i,y] = x[1:dim+2]
-    for i in range(len(to_add)):
-        A[i+len_rem,to_add[i]] = 1
-    B = np.array(list(labels[rem])+list(labels[sample[to_add]]))
-    print(len(B)) """
-
-    """ for i in range(len(tri.simplices)):
-        mat = np.array([b[2:dim+3] for b in bc if b[1]==i])
-        print(i,np.linalg.matrix_rank(mat))
-
-
-    #Check which triangles do not appear in the equations
-    appear = []
-    for i in range(len(rem)):
-        appear.append(int(bc[rem[i]][1]))
-    appear = set(appear)
-    to_add = list(set(range(len(tri.simplices))).difference(appear))
-    print(appear)
-    print(to_add)
-
-    len_rem = len(rem)
-    A = dok_array((len_rem+3*len(to_add),len(sample)), dtype=np.float32)
-    for i in range(len_rem):
-        x = bc[rem[i]][1:(dim+3)]            #We extract index and barycentric coordinates of the i-th remaining point
-        y = tri.simplices[int(x[0])]    #We extract the points of the triangulation containing the i-th remaining point
-        A[i,y] = x[1:dim+2]
-    B = list(labels[rem])
-    for i in range(len(to_add)):
-        for u in tri.simplices[to_add[i]]:
-            A[i+len_rem,u] = 1
-            B = B + [labels[sample[u]]]
-    B = np.array(B) """
-    print(np.linalg.matrix_rank(A.todense()),B.shape)
     return A, B
 
 def compute_edges_variance(data,dim,sample,tri):
+    """
+    Computes the variance of the edges size of the triangulation.
+
+    Args:
+        - data: array with data.
+        - dim: dimension of data.
+        - sample: indices of data belonging to the triangulation.
+        - tri: Delaunay triangulation.
+        
+    Returns:
+        - sigma: variance of the edges size of the triangulation.
+    """
     edges = []
     for triangle in tri.simplices:
         for u in triangle:
@@ -242,24 +237,102 @@ def compute_edges_variance(data,dim,sample,tri):
     return sigma
 
 def compute_real_error(points, dim, tri, trilabels, threshold, real):
+    """
+    Computes the proportion of incorrectly predicted labels with respect to the real labels.
+
+    Args:
+        - points: points of which to compute the error.
+        - dim: dimension of points.
+        - tri: Delaunay triangulation.
+        - trilabels: labels of the points of tri.
+        - threshold: threshold at which a point is classified to class 1.
+        - real: real labels of points.
+    
+    Returns:
+        - error: if len(real)>0, the proportion of incorrectly predicted labels; else, 0.
+    """
     if len(real)>0:
         targets, _, _,  incorrect = classify(points, dim, tri, trilabels, threshold, real)
-        return len(incorrect)/len(targets)
+        error =  len(incorrect)/len(targets)
     
     else:
-        return 0
+        error = 0
+    
+    return error
 
-def movepoints_step(data, sample, out_hull, tri, err, dim, al, errw=0.5):
+def mean_training_error(data,dim,sample,bc,tri,e):
+    """
+    Computes the mean error of the training points inside each triangle of the Delaunay triangulation.
+
+    Args:
+        - data: the data to classify.
+        - dim: dimension of data.
+        - sample: indices of data belonging to the triangulation.
+        - bc: barycentric coordinates of the points indexated by rem.
+        - tri: Delaunay triangulation.
+        - e: array with least square residuals.
+
+    Returns:
+        - tri_errors: dictionary with index of triangles as key and [barycenter of triangle, mean error of training
+                      points inside the triangle] as value.
+    """
+    tri_errors = dict()
+    for triangle in range(len(tri.simplices)):
+        #Mean error inside the triangle
+        errors = [e[i] for i in range(len(data)) if (bc[i][1]==triangle or i in sample[tri.simplices[triangle]])]
+        if len(errors) != 0:
+            error = sum(errors)/len(errors)
+        else:
+            error = 0
+        #Barycenter
+        barycenter = np.array([sum([data[sample[i]][j] for i in tri.simplices[triangle]])/(dim+1) for j in range(dim)])
+        tri_errors[triangle] = [barycenter,error]
+    return tri_errors
+
+def add_barycenters(data,labels,dim,sample,out_hull,tri,tri_errors,mte_threshold):
+    """
+    Adds the barycenter of those triangles whose mean training error is greater than a threshold to the triangulation.
+
+    Args:
+        - data: the data to classify.
+        - labels: labels of the data.
+        - dim: dimension of data.
+        - sample: indices of data belonging to the triangulation.
+        - out_hull: indices of the elements of sample not belonging to the convex hull.
+        - tri: Delaunay triangulation.
+        - tri_errors: dictionary containing the barycenter the mean training error of each triangle.
+        - mte_threshold: threshold above which the barycenters will be added.
+
+    Returns:
+        - data: new data with the added barycenters.
+        - labels: new labels with the ones of the added barycenters.
+        - sample: new indices of data belonging to the triangulation with the ones of the added barycenters.
+        - out_hull: new indices of the elements of sample not belonging to the convex hull with the ones of the added barycenters.
+        - added: indices of the added barycenters.
+    """
+    added = []
+    for triangle in tri_errors.keys():
+        if tri_errors[triangle][1] > mte_threshold:
+            data = np.concatenate([data,np.array([tri_errors[triangle][0]])])
+            #I do not know how to assign a label to a new point; for the time being, average
+            new_label = sum([labels[sample[i]] for i in tri.simplices[triangle]])/(dim+1)
+            labels = np.concatenate([labels,np.array([new_label])])
+            sample = np.concatenate([sample,np.array([int(len(data)-1)])])
+            out_hull = np.concatenate([out_hull,np.array([int(len(sample)-1)])])
+            added.append(sample[-1])
+    
+    return data, labels, sample, out_hull, added
+
+def movepoints_step(data, sample, out_hull, tri, err, al, errw=0.5):
     """
     Moves one time the points of sample not in the convex hull according to the error and the distance gradient.
 
     Args:
         - data: array with data.
-        - sample: labels of data belonging to the triangulation.
+        - sample: indices of data belonging to the triangulation.
         - out_hull: labels of the elements of sample not belonging to the convex hull.
         - tri: Delaunay triangulation.
         - err: estimated errors of the points of the triangulation.
-        - dim: dimension of data.
         - al: measures the magnitude of the overall displacement.
         - errw: weight given to the error gradient (weight given to the distance gradient is 1-errw).
     
@@ -288,37 +361,34 @@ def movepoints_step(data, sample, out_hull, tri, err, dim, al, errw=0.5):
 
 
 
-def delaunayization(data,rem,sample,labels,dim,lb=-np.inf,ub=np.inf,binary=False,threshold=0.5):
+def delaunayization(data,sample,labels,dim,lb=-np.inf,ub=np.inf):
     """
     Performs Delaunay triangulation, computes barycentric coordinates, estimates labels and estimates error.
 
     Args:
         - data: array with data.
-        - sample: labels of data belonging to the triangulation.
-        - rem: labels of data not belonging to the triangulation.
+        - sample: indices of data belonging to the triangulation.
+        - labels: labels of the data.
         - dim: dimension of data.
         - lb: lower boundary of estimated labels.
         - ub: upper boundary of estimated labels.
-        - binary: if True, the data is mapped to 0 if lower than threshold and to 1 if greater.
-        - threshold: value from which map binary labels.
     
     Returns:
         - tri: Delaunay triangulation.
+        - bc: barycentric coordinates of the points indexated by rem.
         - e: array with least square residuals.
         - err: array with estimated errors.
+        - y: estimated values for each label.
     """
     tri, bc = subtesselate(data,sample,dim)
-    A, B = compute_eq_parameters(data, tri, rem, sample, labels, bc, dim)
+    A, B = compute_eq_parameters(data, tri, sample, labels, bc, dim)
 
     start = time()
     y = lsq_linear(A,B,bounds=(lb,ub),lsq_solver='lsmr')['x']
     end = time()
     print('Time to solve lsqfit: '+str(end-start))
-    if binary == True:
-        y = (1+np.sign(y-threshold))/2
 
     e = abs(np.matmul(A.todense(),y)-B)
-    print(A.shape,B.shape,e.shape)
     start = time()
     try:
         err = nnls(A.todense(),e)[0] #Faster than lsq_linear
@@ -329,9 +399,11 @@ def delaunayization(data,rem,sample,labels,dim,lb=-np.inf,ub=np.inf,binary=False
     end = time()
     print('Time to solve quadratic: '+str(end-start))
 
-    return tri, e[:len(rem)], err, y
+    return tri, bc, e, err, y
 
-def movepoints(data,labels,rem,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.inf,binary=False,threshold=0.5,filename = "",test_data=[],real=[]):
+
+
+def movepoints(data,labels,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=np.inf,threshold=0.5,bc_time=np.inf,mte_threshold=np.inf,filename = "",test_data=[],real=[]):
     """
     Performs the estimation of labels and movement of points as many times as indicated.
     Also writes, for each iteration: the sum of estimated errors, the sum of the squared residuals, the variance of the estimated
@@ -339,8 +411,9 @@ def movepoints(data,labels,rem,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=
 
     Args:
         - data: array with data.
-        - sample: labels of data belonging to the triangulation.
-        - rem: labels of data not belonging to the triangulation.
+        - labels: labels of the data.
+        - sample: indices of data belonging to the triangulation.
+        - rem: indices of data not belonging to the triangulation.
         - out_hull: labels of the elements of sample not belonging to the convex hull.
         - dim: dimension of data.
         - it: number of times to move the points.
@@ -348,39 +421,54 @@ def movepoints(data,labels,rem,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=
         - errw: weight given to the error gradient (weight given to the distance gradient is 1-errw).
         - lb: lower boundary of estimated labels.
         - ub: upper boundary of estimated labels.
-        - binary: if True, the data is mapped to 0 if lower than threshold and to 1 if greater.
         - threshold: value from which map binary labels.
+        - bc_time: time at which to add barycenters.
+        - mte_threshold: threshold above which the barycenters will be added.
+        - filename: core name of the file where to write the errors.
+        - test_data: if len(test_data)>0, data with which to compute the real error.
+        - real: if len(real)>0, real labels of data with which to compute the real error.
 
     Returns:
+        - data: new data after moving it and adding barycenters.
+        - labels: new labels.
+        - sample: new indices of data from the triangulation.
+        - added: indices of added data.
         - tri: final Delaunay triangulation.
-        - e: final residuals of least squares.
-        - err: final estimated errors.
+        - e: error of points from triangulation.
+        - err: estimated error of points from triangulation.
     """
     avs, sigmas, maxs, evars, rerrs = [], [], [], [], []
+    tri_errors = dict()
+    added = []
     print("Iteration\t Mean error\t Error variance\t Maximum error")
     for i in range(it):
         try:
-            tri, e, err, labels[sample] = delaunayization(data,rem,sample,labels,dim,lb,ub,binary,threshold)
+            tri, bc, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub)
+            if (i+1)%bc_time==0:
+                tri_errors = mean_training_error(data,dim,sample,bc,tri,e)
+                data, labels, sample, out_hull, added = add_barycenters(data,labels,dim,sample,out_hull,tri,tri_errors,mte_threshold)
+                print('Points added: ',len(added))
+                tri, bc, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub)
             avs.append(sum(e)/len(data))
             sigmas.append(np.sqrt(sum(e*e)/len(e) - avs[i]*avs[i]))
             maxs.append(max(e))
             evars.append(compute_edges_variance(data,dim,sample,tri))
             rerrs.append(compute_real_error(test_data, dim, tri, labels[sample], threshold, real))
             print(i,avs[i],sigmas[i],maxs[i],evars[i],rerrs[i])
-            
 
-            movepoints_step(data, sample, out_hull, tri, err, dim, al, errw)
+            movepoints_step(data, sample, out_hull, tri, err, al, errw)
 
         except Exception as e:
             print("Exception at time ",i,":",e)
             break
 
-    tri, e, err, labels[sample] = delaunayization(data,rem,sample,labels,dim,lb,ub,binary,threshold)
-    favs = open("Delaunay/errors/avs"+filename+".txt","w")
-    fsigmas = open("Delaunay/errors/sigmas"+filename+".txt","w")
-    fmaxs= open("Delaunay/errors/maxs"+filename+".txt","w")
-    fevars = open("Delaunay/errors/evars"+filename+".txt","w")
-    frerrs = open("Delaunay/errors/rerrs"+filename+".txt","w")
+    tri, bc, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub)
+    print("Total final data: ",len(data))
+    favs = open("errors/avs"+filename+".txt","w")
+    fsigmas = open("errors/sigmas"+filename+".txt","w")
+    fmaxs= open("errors/maxs"+filename+".txt","w")
+    fevars = open("errors/evars"+filename+".txt","w")
+    frerrs = open("errors/rerrs"+filename+".txt","w")
     for i in range(it-1):
         favs.write(str(avs[i])+"\t")
         fsigmas.write(str(sigmas[i])+"\t")
@@ -393,9 +481,23 @@ def movepoints(data,labels,rem,sample,out_hull,dim,it,al,errw=0.5,lb=-np.inf,ub=
     fevars.close()
     frerrs.close()
 
-    return tri, e, err, labels[sample]
+    return data, labels, sample, added, tri, e, err
 
 def sample_to_test(data,labels,size):
+    """
+    Samples and retrieves a subset of data to perform tests.
+
+    Args:
+        - data: array with initial data from which to sample the test data.
+        - labels: labels of the data.
+        - size: size of the sample.
+
+    Returns:
+        - rem_data: data not from the sample.
+        - rem_labels: labels of data not from the sample.
+        - test_data: data to be tested.
+        - test_labels: labels of data to be tested.
+    """
     hull = ConvexHull(data)
     hull = list(hull.vertices)
     indices = random.sample([int(i) for i in range(len(data)) if i not in hull],size)
@@ -406,7 +508,25 @@ def sample_to_test(data,labels,size):
     return rem_data, rem_labels, test_data, test_labels
 
 def classify(points, dim, tri, trilabels, threshold=0.5, real=None):
-    #For the time being this is a binary classificator
+    """
+    Classifies points in two labels given a Delaunay triangulation.
+    It computes the weighted value of each possible label given the barycentric coordinates of the triangle's vertices of 
+    each point, then takes the one with maximum value.
+
+    Args:
+        - points: points to be classified. They must lie within the convex hull of the triangulation.
+        - dim: dimension of data.
+        - tri: Delaunay triangulation.
+        - trilabels: labels of the points of tri.
+        - threshold: threshold at which a point is classified to class 1.
+        - real: real values of the labels of points (in case we want to compare the estimated labels with them)
+
+    Returns:
+        - targets: estimated labels of points.
+        - errors: if real!=None, errors of the estimated labels.
+        - correct: if real!=None, indices of points whose estimated label is the same as the real one.
+        - incorrect: if real!=None, indices of points whose estimated label is not the same as the real one.
+    """
     bc = []
     for i in range(len(points)):
         point = points[i]
@@ -421,7 +541,6 @@ def classify(points, dim, tri, trilabels, threshold=0.5, real=None):
         y = tri.simplices[int(x[0])]    #We extract the points of the triangulation containing the i-th remaining point
         A[i,y] = x[1:dim+2]
     targets = np.matmul(A,np.array(trilabels))
-    #Only 0 or 1 even if there are more possible labels
     targets = np.array([min(1,math.floor(target/threshold)) for target in targets])
 
     if real.any()!=None:
@@ -433,6 +552,20 @@ def classify(points, dim, tri, trilabels, threshold=0.5, real=None):
         return targets
     
 def plot_3Ddelaunay(data,labels,sample,rem,tri,ax):
+    """
+    Plots the data and the triangulation in 3D.
+    
+    Args:
+        - data: data to which add the new points.
+        - labels: labels of the data.
+        - rem: indices of data not belonging to the triangulation.
+        - sample: indices of data belonging to the triangulation.
+        - tri: Delaunay triangulation.
+        - ax: axes where to plot the data.
+
+    Returns:
+        - None
+    """
     tri_colors = ['b','r','g']
     for triangle in range(len(tri.simplices)):
         tr = tri.simplices[triangle]
@@ -450,3 +583,5 @@ def plot_3Ddelaunay(data,labels,sample,rem,tri,ax):
         ax.plot3D(pts[[1,2],0], pts[[1,2],1], pts[[1,2],2], color=color, lw=lw, alpha = 0.1)
         ax.plot3D(pts[[1,3],0], pts[[1,3],1], pts[[1,3],2], color=color, lw=lw, alpha = 0.1)
         ax.plot3D(pts[[2,3],0], pts[[2,3],1], pts[[2,3],2], color=color, lw=lw, alpha = 0.1)
+    
+    return None

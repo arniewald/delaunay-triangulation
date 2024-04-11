@@ -1,41 +1,45 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Dec 30 15:12:37 2023
-
-@author: arnau
+Applies the algorithm to binary clusterized 3D data from sklearn.
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 from time import time
-#from mayavi import mlab
 
 from sklearn.datasets import make_classification
 
 from functions import *
 
+
 #Variables
-dim = 3
-n_samples = 10000
-noise = 0.1
-size = 50
-test_size = 1000
-al = 0.05
-errw = 0.5
-it = 20
-rep = 0
-lb = 0
-ub = 1
-binary=False
-threshold=0.5
-filename = '_3Dclass_100'
+dim = 3                 #Dimension of data
+n_samples = 10000       #Original size of dataset
+noise = 0.1             #Noise introduced to the dataset
+size = 50               #Original size of Delaunay triangulation
+test_size = 100         #Size of subdata to test
+al = 0.05               #Factor of distance gradient
+errw = 0.5              #Weight of error gradient. Distance gradient's weight is 1-errw
+it = 20                 #Number of iterations
+rep = 0                 #Nº of times to refine convex hull
+lb = 0                  #Lower bound of labels
+ub = 1                  #Upper bound of labels
+threshold = 0.5         #Threshold at which we map the label to 1
+bc_time = np.inf        #Times at which we add barycenters
+mte_threshold = 0.4     #Threshold of mean training error of triangles at which we add the barycenters
+filename = ''           #Name of file in which to write results
 random.seed(0)
 
+
+#Dataset extraction, test sampling and data initialization
 data, labels = make_classification(n_samples=n_samples,n_features=3, n_redundant=0, n_informative=2, n_clusters_per_class=1,n_classes=2,random_state=0)
 data = np.array(data, dtype=float)
 labels = np.array(labels, dtype=float)
 data, labels, test_data, test_labels = sample_to_test(data,labels,test_size)
 data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
 
+
+#Initial plot
 colors_rem = []
 colors_sample = []
 for i in range(len(rem)):
@@ -55,7 +59,9 @@ ax0.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
 ax0.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors_sample)
 ax0.set_title('Original data')
 
-tri, e, err, labels[sample] = delaunayization(data,rem,sample,labels,dim,lb,ub,binary,threshold)
+
+#First delaunayization
+tri, _, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub)
 
 colors_rem = []
 colors_sample = []
@@ -77,9 +83,11 @@ ax1.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color 
 #plot_3Ddelaunay(data,labels,sample,rem,tri,ax1)
 ax1.set_title('First estimation')
 
+
+#Moving points
 start = time()
-tri, e, err, labels[sample] =  movepoints(data,labels,rem,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold,filename,test_data,test_labels)
-end = time()
+data, labels, sample, added, tri, e, err = movepoints(data,labels,sample,out_hull,dim,it,al,errw,lb,ub,threshold,filename=filename,bc_time=bc_time,mte_threshold=mte_threshold, test_data=test_data,real=test_labels)
+end = time()  
 print("Total time: ",end-start)
 
 colors = []
@@ -97,6 +105,8 @@ for i in range(len(sample)):
 #plot_3Ddelaunay(data,labels,sample,rem,tri,ax2)
 ax2.set_title('After moving points')
 
+
+#Test data classification
 start = time()
 targets, errors, correct, incorrect = classify(test_data, dim, tri, labels[sample], threshold=threshold, real=test_labels)
 end = time()
@@ -117,5 +127,8 @@ ax3.scatter3D(test_data[correct][:,0],test_data[correct][:,1],test_data[correct]
 ax3.scatter3D(test_data[incorrect][:,0],test_data[incorrect][:,1],test_data[incorrect][:,2],s=100,color = [test_colors[i] for i in incorrect],marker='x')
 plot_3Ddelaunay(data,labels,sample,rem,tri,ax3)
 ax3.set_title('Labels estimation')
-#fig3.savefig('media/plot'+filename+'.png')
+fig3.savefig('media/plot'+filename+'.png')
+
+
+#Show all plots
 plt.show()

@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Dec 30 15:12:37 2023
-
-@author: arnau
+Applies the algorithm to the circles dataset from sklearn, removing one dimension.
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from time import time
-import pandas as pd
 
-from sklearn.datasets import make_circles, load_iris
+from sklearn.datasets import make_circles
 
 from functions import *
 
@@ -20,19 +17,26 @@ noise = 0.1
 size = 100
 al = 0.1 #DO NOT USE 0.5; DIFFERENT POINTS MAY LAND ON THE SAME SPOT!!!
 errw = 0.5
-it = 20
+it = 10
 rep = 0
 lb = 0
 ub = 1
-binary = False
 threshold = 0.5
+bc_time=20
+mte_threshold=0.4
+filename = ''
+random.seed(0)
 
+
+#Dataset extraction, test sampling and data initialization
 circles, labels = make_circles(n_samples=n_samples, noise=noise)
 data = np.array(circles, dtype=float)
 labels = np.array(labels, dtype=float)
 
 data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
 
+
+#Initial plot
 colors_rem = []
 colors_sample = []
 for i in range(len(rem)):
@@ -46,7 +50,6 @@ for i in range(len(sample)):
     else:
         colors_sample.append('b')
 
-
 fig0 =  plt.figure(figsize = (10,7))
 ax0 = fig0.add_subplot()
 ax0.scatter(data[rem][:,0],data[rem][:,1],s=2,color=colors_rem)
@@ -54,10 +57,10 @@ ax0.scatter(data[sample][:,0],data[sample][:,1],s=100,color = colors_sample)
 
 for i in range(len(sample)):
     ax0.annotate(str(round(labels[sample[i]],2)),[data[sample[i]][0],data[sample[i]][1]])
-plt.show()
 
 
-tri, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub,binary,threshold)
+
+tri, bc, e, err, labels[sample] = delaunayization(data,sample,labels,dim,lb,ub)
 
 colors_rem = []
 colors_sample = []
@@ -79,7 +82,6 @@ ax0.scatter(data[sample][:,0],data[sample][:,1],s=100,color = colors_sample)
 ax0.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "black")
 for i in range(len(sample)):
     ax0.annotate(str(round(labels[sample[i]],2)),[data[sample[i]][0],data[sample[i]][1]])
-plt.show()
 
 
 
@@ -91,14 +93,13 @@ ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
 
 
 start = time()
-tri, e, err, labels[sample] =  movepoints(data,labels,sample,out_hull,dim,it,al,errw,lb,ub,binary,threshold)
+data, labels, sample, added, tri, e, err =  movepoints(data,labels,sample,out_hull,dim,it,al,errw,lb,ub,threshold,filename=filename,bc_time=bc_time,mte_threshold=mte_threshold)
 end = time()
 print("Total time: ",end-start)
 
 ax1.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "blue")
 ax1.scatter(data[sample][:,0],data[sample][:,1],s=[100*i for i in err],color = "blue")
 ax1.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color='black')
-#plt.show()
 
 colors = []
 for i in range(len(sample)):
@@ -113,4 +114,6 @@ ax2.scatter(data[sample][:,0],data[sample][:,1],s=100,color = colors)
 ax2.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "black")
 for i in range(len(sample)):
     ax2.annotate(str(round(labels[sample[i]],2)),[data[sample[i]][0],data[sample[i]][1]])
+ax2.scatter(data[added][:,0],data[added][:,1],s=50,color='black')
+
 plt.show()
