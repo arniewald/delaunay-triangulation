@@ -20,10 +20,9 @@ al = 0.1                #Factor of distance gradient
 errw = 0                #Weight of error gradient. Distance gradient's weight is 1-errw
 it = 100                #Number of iterations
 rep = 0                 #Nº of times to refine convex hull
-threshold = 0.5         #Threshold at which we map the label to 1
 bc_time = 10            #Times at which we add barycenters
-mte_threshold = 0.075    #Threshold of mean training error of triangles at which we add the barycenters
-ref_label = 1           #Label with respect to which binarize
+mte_threshold = 0.075   #Threshold of mean training error of triangles at which we add the barycenters
+ref_label = None           #Label with respect to which binarize
 random.seed(0)
 
 

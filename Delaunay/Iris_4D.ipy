@@ -36,7 +36,6 @@ data = iris['data']
 labels = np.array(iris['target'], dtype=float)
 
 #Binarization
-ref_label = 0
 for i in range(len(labels)):
     if labels[i] == ref_label:
         labels[i] = 1

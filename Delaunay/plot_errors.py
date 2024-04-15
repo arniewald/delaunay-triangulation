@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 folder = "errors/"
 files = ["avs","sigmas","maxs","evars","rerrs"]
-sufix = '_Iris3D_mc_bctime10_th0.2.txt'
+sufix = 'Beans_SolidityEccentricityCompactness_None_bctime10_th0.2.txt'
 files = [folder+f+sufix for f in files]
 titles = ['Mean error' + sufix,"Error variance", "Maximum error","Edge variance","Real error"]
 fig, axs = plt.subplots(len(files),1,figsize=(6, 6))
@@ -19,7 +19,7 @@ for i in range(len(files)):
     ys = ys.split("\t")
     ys.pop()
     ysaux = []
-    for j in range(0):
+    for j in range(len(ys)):
         ysaux.append(float(ys[j]))
     ys = ysaux
     axs[i].plot(range(len(ys)),ys)

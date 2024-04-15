@@ -152,7 +152,6 @@ def mc_add_barycenters(data,labels,dim,sample,out_hull,tri,tri_errors,mte_thresh
     for triangle in tri_errors.keys():
         if tri_errors[triangle][1] > mte_threshold:
             data = np.concatenate([data,np.array([tri_errors[triangle][0]])])
-            #I do not know how to assign a label to a new point; for the time being, average
             new_label = np.sum([labels[sample[i],:] for i in tri.simplices[triangle]], axis = 0)/(dim+1)
             labels = np.concatenate([labels,np.array([new_label])])
             sample = np.concatenate([sample,np.array([int(len(data)-1)])])
@@ -214,6 +213,7 @@ def mc_delaunayization(data,sample,labels,dim,dim_labels):
     constraint = LinearConstraint(C,lb=np.zeros(len(sample)),ub=np.ones(len(sample)))
 
     start = time()
+    print('Starting lsq fit...')
     y_aux = minimize(fun,x0,bounds=bounds,constraints=constraint).x
     end = time()
     print('Time to solve lsqfit: '+str(end-start))
@@ -270,7 +270,8 @@ def mc_movepoints(data,labels,sample,out_hull,dim,dim_labels,it,al,bc_time=np.in
                 tri_errors = mc_mean_training_error(data,dim,sample,bc,tri,e)
                 data, labels, sample, out_hull, added = mc_add_barycenters(data,labels,dim,sample,out_hull,tri,tri_errors,mte_threshold)
                 print('Points added: ',len(added))
-                tri, bc, e, labels[sample] = mc_delaunayization(data,sample,labels,dim,dim_labels)
+                out_hull = [int(x) for x in out_hull]
+                tri, bc, e, labels[sample,:] = mc_delaunayization(data,sample,labels,dim,dim_labels)
 
             avs.append(sum(e)/len(data))
             sigmas.append(np.sqrt(sum(e*e)/len(e) - avs[i]*avs[i]))
