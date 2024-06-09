@@ -19,14 +19,16 @@ Fields : 'Area', 'Perimeter', 'MajorAxisLength', 'MinorAxisLength',
 #Variables
 class_map = {'BARBUNYA':0,'BOMBAY':1,'CALI':2,'DERMASON':3,'HOROZ':4,'SEKER':5,'SIRA':6}
 classes = ['BARBUNYA','BOMBAY','CALI'] #Classes to select
-features = ['Solidity','Eccentricity','Compactness'] #Features to select. If None, selects all features.
+features = ['Area', 'Perimeter', 'MajorAxisLength','MinorAxisLength',
+       'AspectRation'] #Features to select. If None, selects all features.
 al = 0.1                #Factor of distance gradient
 errw = 0                #Weight of error gradient. Distance gradient's weight is 1-errw
-it = 15                #Number of iterations
+it = 100               #Number of iterations
+errw = 0.9
 rep = 0                 #Nº of times to refine convex hull
 threshold = 0.5         #Threshold at which we map the label to 1
-bc_time = np.inf           #Times at which we add barycenters
-mte_threshold = 0.2     #Threshold of mean training error of triangles at which we add the barycenters
+bc_time = np.inf          #Times at which we add barycenters
+mte_threshold = 0.5     #Threshold of mean training error of triangles at which we add the barycenters
 ref_label = None           #Label with respect to which binarize
 
 #Name of file in which to write results
@@ -34,7 +36,7 @@ str_features = ''
 if features!=None:
     str_features = str_features.join(features)
     str_features = str_features + '_'
-filename = 'Beans_' + str_features + str(ref_label) + '_bctime' + str(bc_time) + '_th' + str(mte_threshold)           
+filename = 'Beans_errorgradient_'+str(errw)# + str_features + str(ref_label) + '_bctime' + str(bc_time) + '_th' + str(mte_threshold)           
 random.seed(0)
 
 #Extraction of data with the desired features and classes
@@ -50,14 +52,13 @@ else:
 labels = np.array(df['Class'].to_numpy(), dtype = np.float64)
 
 dim = data.shape[1]  #Dimension of data
-size = math.floor(len(data)*0.01)               #Original size of Delaunay triangulation
+size = math.floor(len(data)*0.05)               #Original size of Delaunay triangulation
 test_size = math.floor(len(data)*0.1)          #Size of subdata to test
-print(dim, size, test_size)
 
 data, labels, test_data, test_labels = sample_to_test(data,labels,test_size)
+print('Initializing sample...')
 data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)
 labels, dim_labels = reshape_labels(data,labels)
-print(len(data),len(sample),dim_labels)
 
 #Initial plot
 colors_rem = []
@@ -83,9 +84,8 @@ ax0.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
 ax0.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors_sample)
 ax0.scatter3D(data[sample[out_hull]][:,0],data[sample[out_hull]][:,1],data[sample[out_hull]][:,2],s=100,marker='x')
 
-
 #First delaunayization
-tri, _, e, labels[sample,:] = mc_delaunayization(data,sample,labels,dim,dim_labels)
+tri, _, e, labels[sample,:], err = mc_delaunayization2(data,sample,labels,dim,dim_labels)
 colors_sample = [[min(1,labels[sample][i,0]),min(labels[sample][i,1],1),1-min(labels[sample][i,0],1)-min(1,labels[sample][i,1])] for i in range(len(sample))]
 colors_sample = [[max(c[0],0),max(c[1],0),max(c[2],0)] for c in colors_sample]
 
@@ -99,7 +99,7 @@ ax1.set_title('First estimation')
 
 #Moving points
 start = time()
-data, labels, sample, added, tri, e = mc_movepoints(data,labels,sample,out_hull,dim,dim_labels,it,al,bc_time,mte_threshold,filename=filename, test_data=test_data,real=test_labels)
+data, labels, sample, added, tri, e = mc_movepoints(data,labels,sample,rem,out_hull,dim,dim_labels,it,al,errw,bc_time,mte_threshold,filename=filename, test_data=test_data,real=test_labels)
 end = time()
 print("Total time: ",end-start)
 
@@ -117,14 +117,10 @@ ax2.set_title('After moving points')
 #Test data classification
 targets, errors, correct, incorrect = mc_classify(test_data, dim, tri, labels[sample,:], real=test_labels)
 print(errors)
+to_color = ['r','g','b','yellow','purple','pink','orange']
 test_colors = []
 for i in range(len(test_labels)):
-    if test_labels[i]==0:
-        test_colors.append('r')
-    elif test_labels[i] == 1:
-        test_colors.append('g')
-    else:
-        test_colors.append('b')
+    test_colors.append(to_color[int(test_labels[i])])
 
 fig3 =  plt.figure(figsize = (10,7))
 ax3 = fig3.add_subplot(111, projection='3d')

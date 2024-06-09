@@ -1,17 +1,34 @@
 Alternative way to compute the labels: minimize curvature of the resulting surface.
-Higher dimensions
 Need to know in which format we will receive the data.
 Improve visualization of the surface
 Optimization 
 Fix the data origin
-Predict new points
 Non-euclidean distances
 
-05/2/24
-Look for new datasets to try (not limited but including 3Dclassification)
-Document the code
+30/05/24
+CHECK MEMORY
+Implement averages technique (=> you will get rid of perturbation)
+Make level visualization (looks pretty cool)
+3D version of Franco's dataset
 
-Implement 3 classes classification and try it with Iris, only distance, adding barycenters but not too many. 
-COMPARE WITH PREVIOUS TRIALS (DO NOT OVERWRITE IT!!!).
-Think of a way of not adding too many barycenters (problematic for small datasets).
-Check if memory works better than rank check.
+06/05/24
+Return to flat case. Make video + quiver + predicted quiver. Maybe add noise to the dataset.
+
+22/4/24
+Our main goal right now is REDUCING TRAINING ERROR (learning process) first 
+and REDUCING REAL ERROR second.
+0. With 1000 points in sample and 6 labels takes a LOT of time (30-40 seconds, both lsq fit and move points)
+1. Solving memory:
+    - Do not calculate barycentric coordinates of tri points.
+    - Add eps*id to P.
+2. Return to error gradient. Start with an easy case, then Beans. Compare with barycenters
+3. Think of a way of not adding too many barycenters (problematic for small datasets).
+No meeting next day; send an email with results (specifically gradient-barycenters comparison).
+4. Compare when data is in surface and when it is not.
+
+Choices of an appropiate triangulation will have to be made.
+Can we measure overlapping?
+k fold validation, bootstrap.
+betti numbers.
+Check if matrix is sparse (plt.imshow(matrix) or another function)
+

@@ -75,7 +75,7 @@ ax0.set_title('Original data')
 
 
 #First delaunayization
-tri, _, e, labels[sample,:] = mc_delaunayization(data,sample,labels,dim,dim_labels)
+tri, _, e, labels[sample,:] = mc_delaunayization2(data,sample,labels,dim,dim_labels)
 colors_sample = [[min(1,labels[sample][i,0]),min(labels[sample][i,1],1),1-min(labels[sample][i,0],1)-min(1,labels[sample][i,1])] for i in range(len(sample))]
 colors_sample = [[max(c[0],0),max(c[1],0),max(c[2],0)] for c in colors_sample]
 

@@ -62,6 +62,7 @@ ax0 = fig0.add_subplot(111, projection='3d')
 ax0.scatter3D(data[rem][:,0],data[rem][:,1],data[rem][:,2],s=2,color=colors_rem)
 ax0.scatter3D(data[sample][:,0],data[sample][:,1],data[sample][:,2],s=100,color = colors_sample)
 ax0.set_title('Original data')
+plt.show()
 
 #First delaunayization
 tri, _, e, labels[sample,:] = mc_delaunayization(data,sample,labels,dim,dim_labels)

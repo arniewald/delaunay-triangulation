@@ -1,0 +1,50 @@
+{
+    "iris":
+    {
+        "features": null,
+        "errw": 0.5,
+        "ref_label": null, 
+        "bc_time": null, 
+        "mte_threshold": 0.5, 
+        "seed": 0
+    },
+    "beans":
+    {
+        "classes": [
+            "BARBUNYA",
+            "BOMBAY",
+            "CALI"
+        ],
+        "features": [
+            "Area",
+            "Perimeter", 
+            "MajorAxisLength",
+            "MinorAxisLength",
+            "AspectRation"
+        ],
+        "errw": 0.5,
+        "ref_label": null, 
+        "bc_time": null, 
+        "mte_threshold": 0.5, 
+        "seed": 0
+    },
+    "yeast":
+    {
+        "classes": [
+            "NUC",
+            "ME1",
+            "ME2"
+        ],
+        "features": [
+            "mcg",
+            "gvh",
+            "mit",
+            "erl"
+        ],
+        "errw": 0.5,
+        "ref_label": null, 
+        "bc_time": null, 
+        "mte_threshold": 0.5, 
+        "seed": 0
+    }
+}

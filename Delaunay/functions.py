@@ -569,10 +569,14 @@ def plot_3Ddelaunay(data,labels,sample,rem,tri,ax):
     tri_colors = ['b','r','g']
     for triangle in range(len(tri.simplices)):
         tr = tri.simplices[triangle]
-        ll = [labels[rem[i]] for i in range(len(rem)) if tri.find_simplex(data[rem[i]])==triangle]
-        if len(ll)!=0:
-            color = tri_colors[math.floor(sum(ll)/len(ll))]
-            lw = '1'
+        if len(labels)>0:
+            ll = [labels[rem[i]] for i in range(len(rem)) if tri.find_simplex(data[rem[i]])==triangle]
+            if len(ll)!=0:
+                color = tri_colors[math.floor(sum(ll)/len(ll))]
+                lw = '1'
+            else:
+                color = 'black'
+                lw = '0.5'
         else:
             color = 'black'
             lw = '0.5'

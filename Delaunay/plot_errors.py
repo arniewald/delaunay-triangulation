@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 folder = "errors/"
 files = ["avs","sigmas","maxs","evars","rerrs"]
-sufix = 'Beans_SolidityEccentricityCompactness_None_bctime10_th0.2.txt'
+sufix = 'Yeast_NUC_CYT_MIT_errorgradient_0.9.txt'
 files = [folder+f+sufix for f in files]
 titles = ['Mean error' + sufix,"Error variance", "Maximum error","Edge variance","Real error"]
 fig, axs = plt.subplots(len(files),1,figsize=(6, 6))
@@ -24,5 +24,5 @@ for i in range(len(files)):
     ys = ysaux
     axs[i].plot(range(len(ys)),ys)
     axs[i].set_title(titles[i])
-
+fig.savefig('media/errors_'+sufix[:-4]+'.png')
 plt.show()

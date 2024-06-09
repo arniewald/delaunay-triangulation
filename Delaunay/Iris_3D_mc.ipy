@@ -17,11 +17,11 @@ from mc_functions import *
 dim = 3                 #Dimension of data
 size = 50               #Original size of Delaunay triangulation
 test_size = 20          #Size of subdata to test
-al = 0.1                #Factor of distance gradient
-errw = 0                #Weight of error gradient. Distance gradient's weight is 1-errw
+al = 0.7                #Factor of distance gradient
+errw = 0.9                #Weight of error gradient. Distance gradient's weight is 1-errw
 it = 100                #Number of iterations
 rep = 0                 #Nº of times to refine convex hull
-bc_time = 10            #Times at which we add barycenters
+bc_time = np.inf         #Times at which we add barycenters
 mte_threshold = 0.2     #Threshold of mean training error of triangles at which we add the barycenters
 ref_label = None        #Label with respect to which binarize 
 random.seed(0)
@@ -91,7 +91,7 @@ ax0.set_title('Original data')
 
 
 #First delaunayization
-tri, _, e, labels[sample,:] = mc_delaunayization(data,sample,labels,dim,dim_labels)
+tri, _, e, labels[sample,:], err = mc_delaunayization2(data,sample,labels,dim,dim_labels)
 
 if ref_label!=None:
     colors_sample = [[1-min(1,labels[sample][i,0]),0,min(labels[sample][i,0],1)] for i in range(len(sample))]
@@ -109,7 +109,7 @@ ax1.set_title('First estimation')
 
 #Moving points
 start = time()
-data, labels, sample, added, tri, e = mc_movepoints(data,labels,sample,out_hull,dim,dim_labels,it,al,bc_time,mte_threshold,filename=filename, test_data=test_data,real=test_labels)
+data, labels, sample, added, tri, e = mc_movepoints(data,labels,sample,rem,out_hull,dim,dim_labels,it,al,errw,bc_time,mte_threshold,filename=filename, test_data=test_data,real=test_labels)
 end = time()
 print("Total time: ",end-start)
 
