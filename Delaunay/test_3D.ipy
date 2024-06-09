@@ -28,9 +28,9 @@ ref_label = None        #Label with respect to which binarize
 node = 41
 random.seed(0)
 
-args = parameters_dict['yeast']
+#args = parameters_dict['yeast']
 
-data, labels, dim, size, test_size, _ =  read_yeast_data(**args)
+data, labels, dim, size, test_size, _ =  read_general_data('yeast')
 data, labels, test_data, test_labels = sample_to_test(data,labels,test_size)
 print('Initializing sample...')
 data, labels, sample, rem, out_hull = initialize_sample(data,labels,size,dim,rep)

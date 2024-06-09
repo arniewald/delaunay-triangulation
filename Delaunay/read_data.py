@@ -8,39 +8,6 @@ from sklearn.datasets import load_iris
 from functions import *
 from mc_functions import *
 
-#Variables
-#Name of file in which to write results
-           
-datasets = ['iris','beans','yeast']
-parameters_dict = dict()
-parameters_dict['iris'] = {
-    'features': None,
-    'errw': 0.5,
-    'ref_label': None, 
-    'bc_time': np.inf, 
-    'mte_threshold': 0.5, 
-    'seed': 0
-}
-
-parameters_dict['beans'] = {
-    'classes':  ['BARBUNYA','BOMBAY','CALI'],
-    'features': ['Area', 'Perimeter', 'MajorAxisLength','MinorAxisLength','AspectRation'],
-    'errw': 0.5,
-    'ref_label': None, 
-    'bc_time': np.inf, 
-    'mte_threshold': 0.5, 
-    'seed': 0
-}
-
-parameters_dict['yeast'] = {
-    'classes': ['NUC','ME1','ME2'],
-    'features': ['mcg','gvh','mit','erl'],
-    'errw': 0.5,
-    'ref_label': None, 
-    'bc_time': np.inf, 
-    'mte_threshold': 0.5, 
-    'seed': 0
-}
 
 def read_iris_data(features = None, errw = 0.5, ref_label = None, bc_time = np.inf, mte_threshold = 0.5, seed = 0):
     """
@@ -143,20 +110,9 @@ def read_general_data(data_name):
     f = open('params.json')
     args = json.load(f)[data_name]
     if data_name == 'iris':
-        return read_iris_data(features = parameters_dict[data_name]['features'], 
-                       errw = parameters_dict[data_name]['errw'], 
-                       ref_label = parameters_dict[data_name]['ref_label'], 
-                       bc_time = parameters_dict[data_name]['bc_time'], 
-                       mte_threshold = parameters_dict[data_name]['mte_threshold'], 
-                       seed = parameters_dict[data_name]['seed'])
+        return read_iris_data(**args)
     elif data_name == 'beans':
-        return read_beans_data(classes = parameters_dict[data_name]['classes'],
-                       features = parameters_dict[data_name]['features'], 
-                       errw = parameters_dict[data_name]['errw'], 
-                       ref_label = parameters_dict[data_name]['ref_label'], 
-                       bc_time = parameters_dict[data_name]['bc_time'], 
-                       mte_threshold = parameters_dict[data_name]['mte_threshold'], 
-                       seed = parameters_dict[data_name]['seed'])
+        return read_beans_data(**args)
     elif data_name == 'yeast':
         return read_yeast_data(**args)
     else:
