@@ -1,0 +1,32 @@
+# -*- coding: utf-8 -*-
+import matplotlib.pyplot as plt
+
+from functions.reading_functions import extract_run_params
+from functions.class_functions import fully_train
+from functions.plotting_functions import plot_classifier, plot_classifier_scrollable, plot_metrics
+from classes.Classifier import *
+from classes.Trainer import Trainer
+from classes.Measurer import Measurer
+from classes.Writer import Writer
+from classes.Reader import Reader
+
+data_name = 'classification'
+it = 20
+save = True
+verbose = True
+
+run_params = extract_run_params(data_name)
+TestClassifier = TestClassifier(data_name, run_params)
+
+Trainer = Trainer(TestClassifier,run_params)
+Measurer = Measurer()
+added, long_data, long_labels, long_tris = fully_train(TestClassifier,Trainer,Measurer,it,save=save,verbose=verbose)
+plot_classifier_scrollable(TestClassifier,it,long_data,long_labels,long_tris,Measurer.metrics,run_params)
+""" Writer.write_folder() 
+
+Reader = Reader(Writer.folder_name)
+Classifier = Reader.read_classifier()
+Measurer = Reader.read_measurer()
+fig_classifier = plot_classifier(Classifier)
+fig_metrics = plot_metrics(Measurer)
+plt.show() """

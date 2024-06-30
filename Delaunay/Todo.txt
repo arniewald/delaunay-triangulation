@@ -5,6 +5,25 @@ Optimization
 Fix the data origin
 Non-euclidean distances
 
+17/06/24
+Fix the code (circles not working!!)
+Send results
+Use more points for triangulation
+Do the barycentric addition at the start
+Compare random sampling and non-random sampling (check training and real error, without moving points)
+Measure entropy
+Try neigborhoods by closest neighbor
+Run null models
+
+10/06/24
+Generate deterministic system and check everything is right
+Documentation and completion of project
+Refine convex hull
+Non-random sampling
+Entropy, mutual information
+Betti numbers
+Rigidesa de la triangulació de Delaunay
+
 30/05/24
 CHECK MEMORY
 Implement averages technique (=> you will get rid of perturbation)

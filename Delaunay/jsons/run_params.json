@@ -1,0 +1,113 @@
+{
+    "circles":
+    {
+        "size_prop": 0.1,
+        "sampling": "random",
+        "test_size": 50,
+        "al": 0.035,
+        "errw": 0.9,
+        "avw": 1,
+        "rep": 0,
+        "bc_time": 20,
+        "mte_threshold": 0.4,
+        "seed": 0
+    },
+
+    "moons":
+    {
+        "size_prop": 0.25,
+        "sampling": "random",
+        "test_size": 50,
+        "al": 0.035,
+        "errw": 0.5,
+        "avw": 0,
+        "rep": 0,
+        "bc_time": 20,
+        "mte_threshold": 0.4,
+        "seed": 0
+    },
+
+    "classification":
+    {
+        "size_prop": 0.25,
+        "sampling": "random",
+        "test_size": 100,
+        "al": 0.035,
+        "errw": 0.75,
+        "avw": 5,
+        "rep": 0,
+        "bc_time": null,
+        "mte_threshold": 0.4,
+        "seed": 0
+    },
+
+    "iris":
+    {
+        "size_prop": 0.5,
+        "sampling": "entropic",
+        "test_size": 20,
+        "al": 0.035,
+        "errw": 0.9,
+        "avw": 5,
+        "rep": 1,
+        "bc_time": null,
+        "mte_threshold": 0.4,
+        "seed": 0
+    },
+
+    "beans":
+    {
+        "size_prop": 0.25,
+        "sampling": "random",
+        "test_size": 347,
+        "al": 0.035,               
+        "errw": 0.5,               
+        "avw": 0,
+        "rep": 0,
+        "bc_time": null,
+        "mte_threshold": 0.5,
+        "seed": 0
+    },
+
+    "yeast":
+    {
+        "size_prop": 0.25,
+        "sampling": "random",
+        "test_size": 31,
+        "al": 0.035,
+        "errw": 0.5,
+        "avw":0,
+        "rep": 0, 
+        "bc_time": null, 
+        "mte_threshold": 0.5, 
+        "seed": 0
+    },
+
+    "franco":
+    {
+        "size_prop": 0.25,
+        "sampling": "entropic",
+        "test_size": 500,
+        "al": 0.035,
+        "errw": 0.9,
+        "avw": 1,
+        "rep": 1, 
+        "bc_time": null, 
+        "mte_threshold": 0.5, 
+        "seed": 0
+    },
+
+    "spheres":
+    {
+        "size_prop": 0.25,
+        "sampling": "random",
+        "test_size": 500,
+        "al": 0.035,
+        "errw": 0.5,
+        "avw": 5,
+        "rep": 0, 
+        "bc_time": null, 
+        "mte_threshold": 0.5, 
+        "seed": 0
+    }
+}

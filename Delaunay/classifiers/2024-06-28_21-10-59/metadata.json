@@ -1,0 +1,1 @@
+{"data_name": "circles", "names_data": ["x0", "x1"], "names_labels": ["y0"], "n_samples": 10000, "noise": 0.1, "size_prop": 0.25, "sampling": "random", "test_size": 50, "al": 0.035, "errw": 0.5, "avw": 0, "rep": 0, "bc_time": 20, "mte_threshold": 0.4, "seed": 0}

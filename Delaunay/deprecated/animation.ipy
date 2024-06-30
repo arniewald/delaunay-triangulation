@@ -1,0 +1,89 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+import sklearn
+from sklearn.datasets import make_circles, make_classification, make_moons
+
+import moviepy
+from moviepy.editor import VideoClip
+from moviepy.video.io.bindings import mplfig_to_npimage
+
+from functions import *
+
+title = 'moving_points_class3.webm'
+sizerr=False
+dim = 2
+n_samples = 10000
+noise = 0.1
+size = 500
+al = 0.1 #DO NOT USE 0.5; DIFFERENT POINTS MAY LAND ON THE SAME SPOT!!!
+errw = 0.5
+it = 20
+rep = 0
+lb = 0
+ub = 1
+binary=False
+threshold=0.5
+
+moons, labels = make_classification(n_samples=n_samples,n_features=2, n_redundant=0, n_informative=2, n_clusters_per_class=1,n_classes=3)
+data_aux = []
+for i in range(len(labels)):
+    data_aux.append([moons[i][0], moons[i][1]])
+    data_aux[i].append(labels[i])
+data = np.array(data_aux)
+
+data, sample, rem, out_hull = initialize_sample(data,size,dim,rep)
+tri, _, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
+colors_rem = []
+colors_sample = []
+for i in range(len(rem)):
+    if data[rem[i]][2] >= 4/3:
+        colors_rem.append('g')
+    elif data[rem[i]][2] >= 2/3:
+        colors_rem.append('r')
+    else:
+        colors_rem.append('b')
+for i in range(len(sample)):
+    if data[sample[i]][2] >= 4/3:
+        colors_sample.append('g')
+    elif data[sample[i]][2] >= 2/3:
+        colors_sample.append('r')
+    else:
+        colors_sample.append('b')
+
+fig, ax = plt.subplots()
+
+def make_frame(t):
+     
+    # clear
+    ax.clear()
+    tri, _, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
+    movepoints_step(data, sample, out_hull, tri, err, dim, al, errw)
+    tri, _, err = delaunayization(data,sample,rem,dim,lb,ub,binary,threshold)
+    colors = []
+    for i in range(len(sample)):
+        if data[sample[i]][dim] >= 4/3:
+            colors.append('g')
+        elif data[sample[i]][dim]>=2/3:
+            colors.append('r')
+        else:
+            colors.append('b')
+    if sizerr:
+        sizes=100*err
+    else:
+        sizes=100
+    ax.scatter(data[rem][:,0],data[rem][:,1],s=2,alpha=0.1,color=colors_rem)
+    ax.scatter(data[sample][:,0],data[sample][:,1],s=sizes,color = colors)
+    ax.triplot(data[sample][:,0],data[sample][:,1],tri.simplices,color = "black")
+
+    ax.set_title(str(t))
+    # returning numpy image
+    return mplfig_to_npimage(fig)
+ 
+# creating animation
+animation = VideoClip(make_frame, duration = it)
+ 
+animation.write_videofile(title,fps=5)
+""" # displaying animation with auto play and looping
+animation.ipython_display(fps = 20, loop = True, autoplay = True) """
