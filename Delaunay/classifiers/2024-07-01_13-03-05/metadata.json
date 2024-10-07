@@ -1,0 +1,1 @@
+{"data_name": "iris", "names_data": ["x0", "x1", "x2", "x3"], "names_labels": ["y0", "y1"], "features": null, "ref_label": null, "size_prop": 0.95, "sampling": "random", "test_size": 20, "al": 0.035, "errw": 0.9, "avw": 0.005, "rep": 0, "bc_time": null, "mte_threshold": 0.4, "seed": 0}

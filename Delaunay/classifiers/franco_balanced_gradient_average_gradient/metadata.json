@@ -1,0 +1,1 @@
+{"data_name": "franco", "names_data": ["x0", "x1"], "names_labels": ["y0"], "dim": 2, "n_samples": 5000, "holes": [[-2, 3, 3], [-4, -4, 4]], "size_prop": 0.25, "sampling": "random", "test_size": 50, "al": 0.035, "errw": 0.5, "avw": 5, "rep": 0, "bc_time": null, "mte_threshold": 0.4, "seed": 0}

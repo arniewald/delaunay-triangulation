@@ -1,0 +1,102 @@
+{
+    "circles":
+    {
+        "n_samples": 10000,
+        "noise": 0.1
+    },
+
+    "moons":
+    {
+        "n_samples": 10000,
+        "noise": 0.1
+    },
+
+    "classification":
+    {
+        "n_samples": 5000,
+        "n_features": 3,
+        "n_classes": 3
+    },
+
+    "iris":
+    {
+        "features": null,
+        "ref_label": null
+    },
+
+    "beans":
+    {
+        "classes": [
+            "BARBUNYA",
+            "BOMBAY",
+            "CALI"
+        ],
+        "features": [
+            "Area",
+            "Perimeter", 
+            "MajorAxisLength",
+            "MinorAxisLength",
+            "AspectRation"
+        ],
+        "ref_label": null
+    },
+
+    "yeast":
+    {
+        "classes": [
+            "NUC",
+            "ME1",
+            "ME2"
+        ],
+        "features": [
+            "mcg",
+            "gvh",
+            "mit",
+            "erl"
+        ],
+        "ref_label": null
+    },
+
+    "franco":
+    {
+        "dim": 2,
+        "n_samples": 5000,
+        "holes": [
+            [
+                -2,
+                3,
+                3
+            ],
+            [
+                -4,
+                -4,
+                4
+            ]
+        ]
+    },
+
+    "spheres":
+    {
+        "dim": 3,
+        "n_spheres": 3,
+        "n_samples_per_sphere": 1000
+    },
+
+    "anemia":
+    {
+        "features": [
+            "%Red Pixel",
+            "%Green pixel",
+            "%Blue pixel"
+        ]
+    },
+
+    "diabetes":
+    {
+        "features": [
+            "Glucose",
+            "Insulin",
+            "BloodPressure"
+        ]
+    }
+}

@@ -1,0 +1,1 @@
+{"data_name": "diabetes", "names_data": ["x0", "x1", "x2"], "names_labels": ["y0"], "features": ["Glucose", "Insulin", "BloodPressure"], "size_prop": 0.3, "sampling": "entropic", "test_size": 50, "al": 0.035, "errw": 0.5, "avw": 1.5, "rep": 1, "bc_time": null, "mte_threshold": 0.4, "seed": 0}
