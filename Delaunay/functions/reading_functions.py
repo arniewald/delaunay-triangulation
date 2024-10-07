@@ -145,7 +145,7 @@ def read_iris_data(features = None, ref_label = None):
     dim = data.shape[1]
     return data, labels, dim
 
-def read_beans_data(classes = ['BARBUNYA','BOMBAY','CALI'], features = ['Area', 'Perimeter', 'MajorAxisLength','MinorAxisLength','AspectRation']):
+def read_beans_data(classes = ['BARBUNYA','BOMBAY','CALI'], features = ['Area', 'Perimeter', 'MajorAxisLength','MinorAxisLength','AspectRation'],  ref_label = None):
     """ 
     Reads the beans data.
 
@@ -158,6 +158,7 @@ def read_beans_data(classes = ['BARBUNYA','BOMBAY','CALI'], features = ['Area', 
     Args:
         - classes : possible labels to select.
         - features : features of data.
+        - ref_label : if not None, binarizes the labels. 
     
     Returns:
         Tuple containing
@@ -183,7 +184,7 @@ def read_beans_data(classes = ['BARBUNYA','BOMBAY','CALI'], features = ['Area', 
 
     return data, labels, dim
 
-def read_yeast_data(classes = ['NUC','ME1','ME2'], features = ['mcg','gvh','mit','erl']):
+def read_yeast_data(classes = ['NUC','ME1','ME2'], features = ['mcg','gvh','mit','erl'], ref_label = None):
     """ 
     Reads the yeast data.
 
@@ -193,6 +194,7 @@ def read_yeast_data(classes = ['NUC','ME1','ME2'], features = ['mcg','gvh','mit'
     Args:
         - classes : possible labels to select.
         - features : features of data.
+        - ref_label : if not None, binarizes the labels. 
     
     Returns:
         Tuple containing

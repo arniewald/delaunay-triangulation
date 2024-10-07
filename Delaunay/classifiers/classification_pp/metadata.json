@@ -1,0 +1,1 @@
+{"data_name": "classification", "names_data": ["x0", "x1", "x2"], "names_labels": ["y0", "y1"], "n_samples": 5000, "n_features": 3, "n_classes": 3, "size_prop": 0.25, "sampling": "random", "test_size": 100, "al": 0.035, "errw": 0.75, "avw": 5, "rep": 0, "bc_time": null, "mte_threshold": 0.4, "seed": 0}
