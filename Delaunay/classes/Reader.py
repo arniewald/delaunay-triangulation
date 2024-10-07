@@ -4,7 +4,24 @@ import numpy as np
 import pandas as pd
 
 class Reader():
+    """
+    Class to read saved classifiers and their metrics.
+
+    Attributes:
+        - path : path to the classifiers.
+        - folder_path : path to the spceific classifier.
+    """
     def __init__(self,folder_name=None,to_match={}):
+        """
+        Initializes Reader.
+
+        Args:
+            - folder_name : name of the folder from where to read the classifier.
+            - to_match : if no folder_name is provided, metadata arguments from which to find the classifier.
+
+        Returns:
+            - None
+        """
         self.path = str(os.getcwd()) + '\\classifiers\\'
 
         if folder_name!=None:
@@ -44,6 +61,15 @@ class Reader():
                 self.folder_path = self.path + best_match +'\\'
 
     def read_classifier(self):
+        """
+        Reads the classifier.
+
+        Args:
+            - None
+
+        Returns:
+            - Classifier
+        """
         from classes.Classifier import Classifier
         df = pd.read_csv(self.folder_path+'classifier.csv')
         metadata_path = self.folder_path + 'metadata.json'
@@ -70,6 +96,15 @@ class Reader():
         return Classifier
 
     def read_measurer(self):
+        """
+        Reads the Measurer containing the metrics of the training of the classifier.
+
+        Args:
+            - None
+
+        Returns:
+            - Measurer
+        """
         from classes.Measurer import Measurer
         df = pd.read_csv(self.folder_path+'metrics.csv')
         training_error = df.training_error.tolist()

@@ -1,0 +1,1 @@
+{"data_name": "spheres", "names_data": ["x0", "x1", "x2"], "names_labels": ["y0", "y1"], "dim": 3, "n_spheres": 3, "n_samples_per_sphere": 1000, "size_prop": 0.25, "sampling": "random", "test_size": 50, "al": 0.035, "errw": 0.5, "avw": 1, "rep": 0, "bc_time": 20, "mte_threshold": 0.4, "seed": 0}

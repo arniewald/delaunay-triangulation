@@ -1,0 +1,1 @@
+{"data_name": "anemia", "names_data": ["x0", "x1", "x2"], "names_labels": ["y0"], "features": ["%Red Pixel", "%Green pixel", "%Blue pixel"], "size_prop": 0.25, "sampling": "entropic", "test_size": 10, "al": 0.035, "errw": 0.5, "avw": 3, "rep": 0, "bc_time": null, "mte_threshold": 0.5, "seed": 0}

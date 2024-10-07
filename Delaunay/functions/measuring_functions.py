@@ -10,16 +10,15 @@ def adjacency(tri,out_hull):
     are adjacent to each other.
 
     Args:
-        - tri: Delaunay triangulation.
-        - out_hull: labels of the elements of sample not belonging to the convex hull.
+        - tri : Delaunay triangulation.
+        - out_hull : labels of the elements of sample not belonging to the convex hull.
 
     Returns:
-        - adj: dictionary. Each key is an element of out_hull and its values are the labels of the points of the
+        adj: dictionary. Each key is an element of out_hull and its values are the labels of the points of the
                triangulation that are adjacent to the corresponding point. Note that the elements of the triangulation
                and the ones of out_hull are both indices of elements of sample.
     """
     adj = dict()
-    print(len(tri.simplices))
     for i in out_hull:
         adj[i] = []
     for triangle in tri.simplices:
@@ -36,18 +35,14 @@ def adjacency(tri,out_hull):
 
 def mean_training_error(Classifier: Classifier, e):
     """
-    Computes the mean error of the training points inside each triangle of the Delaunay triangulation.
+    Computes the mean error of the training points inside each triangle of the Delaunay triangulation of a classifier.
 
     Args:
-        - data: the data to classify.
-        - dim: dimension of data.
-        - sample: labels of data belonging to the triangulation.
-        - bc: barycentric coordinates of the points indexated by rem.
-        - tri: Delaunay triangulation.
-        - e: array with least square residuals.
+        - Classifier : Classifier from which to compute the mean training error.
+        - e : training error of each training point with respect to the classification estimation.
 
     Returns:
-        - tri_errors: dictionary with index of triangles as key and [barycenter of triangle, mean error of training
+        tri_errors: dictionary with index of triangles as key and [barycenter of triangle, mean error of training
                       points inside the triangle] as value.
     """
     tri_errors = dict()
@@ -66,22 +61,19 @@ def mean_training_error(Classifier: Classifier, e):
     
     return tri_errors
 
-def compute_real_error(Classifier: Classifier, points, real):
+def compute_real_error(Classifier: Classifier, test_data, test_labels):
     """
     Computes the proportion of incorrectly predicted labels with respect to the real labels.
 
     Args:
-        - points: points of which to compute the error.
-        - dim: dimension of points.
-        - tri: Delaunay triangulation.
-        - trilabels: labels of the points of tri.
-        - real: real labels of points.
-    
+        - Classifier : classifier form which to compute the real error.
+        - test_data : data from which real labels are known.
+        - test_labels : real labels of test_data.
     Returns:
-        - error: if len(real)>0, the proportion of incorrectly predicted labels; else, 0.
+        error : if len(real)>0, the proportion of incorrectly predicted labels; else, 0.
     """
     error = 0
-    targets, _, _,  incorrect = Classifier.classify(points, real)
+    targets, _, _,  incorrect = Classifier.classify(test_data, test_labels)
     if len(targets)>0:
         error = len(incorrect)/len(targets)
     
@@ -92,13 +84,10 @@ def compute_edges_variance(Classifier: Classifier):
     Computes the variance of the edges size of the triangulation.
 
     Args:
-        - data: array with data.
-        - dim: dimension of data.
-        - sample: indices of data belonging to the triangulation.
-        - tri: Delaunay triangulation.
+        - Classifier : classifier form which to compute the variance of the edges size.
         
     Returns:
-        - sigma: variance of the edges size of the triangulation.
+        sigma : variance of the edges size of the triangulation.
     """
     edges = []
     for triangle in Classifier.tri.simplices:

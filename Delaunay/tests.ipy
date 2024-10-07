@@ -1,128 +1,20 @@
-# -*- coding: utf-8 -*-
-"""
-Comparing different alternatives:
-    1. Weight of error gradient (10%, 50%, 90%)
-    2. Adding barycenters (inf, 5)
-    3. Random or entropic sampling (random, entropic)
-    4. Refining convex hull (0, 1)
-    5. Size of sample (15%, 25%)
-    6. Average weight (1,5)
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 
-3*2*2*2*2*2*8 = 768 runs
+from functions.reading_functions import read_anemia_data, read_diabetes_data, read_general_data
 
-"""
 
-from time import time
-
-from functions.initialization_functions import initialize_sample, reshape_labels
-from functions.reading_functions import extract_run_params, read_general_data
-from functions.training_functions import delaunayization, movepoints
-from functions.new_classification_functions import sample_to_test, classify
-from functions.writing_functions import generate_filename, save_results
-
-it = 50
-verbose = False
-data_names = ['iris']#['circles','moons','classification','iris','beans','yeast','franco','spheres']
-errws = [0.1,0.5,0.9]
-bc_times = [None,5]
-samplings = ['random','entropic']
-reps = [0,1]
-size_props = [0.25]#,0.15]
-avws = [1,5]
-params = ['errw','bc_time','sampling','rep','size_prop','avw']
-params_dict_list = []
-d = {
-    'data_name': 'circles',
-    'errw': 0.1,
-    'bc_time': None,
-    'sampling': 'random',
-    'rep': 0,
-    'size_prop': 0.15,
-    'avw': 1
-}
-
-d0 = {
-    'errw': 0.5,
-    'bc_time': None,
-    'sampling': 'random',
-    'rep': 0,
-    'size_prop': 0.25,
-    'avw': 1
-}
-
-d1 = {
-    'errw': 0.5,
-    'bc_time': None,
-    'sampling': 'entropic',
-    'rep': 0,
-    'size_prop': 0.25,
-    'avw': 1
-}
-
-d2 = {
-    'errw': 0.9,
-    'bc_time': 5,
-    'sampling': 'entropic',
-    'rep': 1,
-    'size_prop': 0.25,
-    'avw': 5
-}
-#Hardcodejat però pels nostres propòsits ara mateix tant és
-""" for data_name in data_names:
-    for errw in errws:
-        for bc_time in bc_times:
-            for sampling in samplings:
-                for rep in reps:
-                    for size_prop in size_props:
-                        for avw in avws:
-                            d = d.copy()
-                            d['data_name'] = data_name
-                            d['errw'] = errw
-                            d['bc_time'] = bc_time
-                            d['sampling'] = sampling
-                            d['rep'] = rep
-                            d['size_prop'] = size_prop
-                            d['avw'] = avw
-                            params_dict_list.append(d)
- """
-for data_name in data_names:
-    d = d0.copy()
-    d['data_name'] = data_name
-    params_dict_list.append(d)
-
-    d = d1.copy()
-    d['data_name'] = data_name
-    params_dict_list.append(d)
-
-    d = d2.copy()
-    d['data_name'] = data_name
-    params_dict_list.append(d)
-
-print(params_dict_list)
-for params_dict in params_dict_list:
-    
-    data_name = params_dict['data_name']
-    print(data_name)
-    for param in params:
-        print(param,params_dict[param])
-    #Dataset extraction, test sampling and data initialization
-    data_params, data, labels, dim = read_general_data(data_name)
-    run_params = extract_run_params(data_name)
-    for param in params:
-        run_params[param] = params_dict[param]
-
-    filename = generate_filename(data_name, run_params)
-    data, labels, test_data, test_labels = sample_to_test(data,labels,run_params)
-    data, labels, sample, rem, out_hull = initialize_sample(data,labels,dim,run_params)
-    labels, dim_labels = reshape_labels(data,labels)
-    print(len(data),len(sample))
-    tri, _, e, labels[sample,:], err = delaunayization(data,sample,labels,dim,dim_labels,run_params)
-    start = time()
-    data, labels, sample, added, tri, e, err_dict, long_data, long_labels, long_tris = movepoints(data,labels,sample,rem,out_hull,dim,dim_labels,run_params,it,filename=filename,test_data=test_data,real=test_labels,save=True,verbose=verbose)
-    end = time()
-    print("Total time: ",end-start)
-
-    targets, errors, correct, incorrect = classify(test_data, dim, tri, labels[sample,:], real=test_labels)
-    print(rem)
-    save_results(data_name,filename,data,labels,sample,rem,added,test_data,test_labels,correct,incorrect,tri,dim,dim_labels,err_dict)
+data, labels, dim = read_diabetes_data(features = ['Insulin','Glucose','DiabetesPedigreeFunction'])
+print(len(data))
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+colors=[]
+for label in labels:
+    if label==1:
+        colors.append('r')
+    else:
+        colors.append('b')
+ax.scatter3D(data[:,0],data[:,1],data[:,2],color=colors)
+plt.show()
 

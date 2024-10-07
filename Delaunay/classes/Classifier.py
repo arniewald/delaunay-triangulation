@@ -3,8 +3,40 @@ from functions.initialization_functions import sample_to_test, subtesselate, ini
 from functions.classification_functions import classify
 
 class Classifier:
-    def __init__(self, data, labels, data_params=None, run_params=None, sample=None, out_hull=None):
+    """
+    Data to be trained, parameters under which train it and new data to classify.
+
+    Attributes:
+        - dim_labels : nº of diferent possible labels - 1.
+        - dim : dimension of data.
+        - data : data from which the classifier will be created.
+        - labels : labels of data.
+        - sample : indices of the data that will be used as a classifier.
+        - out_hull : indices of sample that do not belong to the convex hull boundary.
+        - rem : indices of data that will be used for training.
+        - data_params : parameters that characterize the data.
+        - run_params : parameters that characterize how Classifier will be trained.
+        - test_data : data used to compute real error.
+        - test_labels : labels of test_data.
+        - tri : Delaunay triangulation of points from data indexed by sample.
+        - bc : barycentric coordinates of points from data indexed by rem with respect to tri.
         
+    """
+    def __init__(self, data, labels, data_params=None, run_params=None, sample=None, out_hull=None):
+        """
+        Initializes Classifier.
+
+        Args:
+            - data : data from which the classifier will be created
+            - labels : labels of data
+            - data_params : parameters that characterize the data
+            - run_params : parameters that characterize how Classifier will be trained
+            - sample : if not None, indices of the data that will be used as a classifier
+            - out_hull : if not None, indices of sample that do not belong to the convex hull boundary.
+
+        Returns:
+            - None
+        """
         if run_params!=None or data_params!=None:
             self.dim = len(data[0])
             self.dim_labels = len(set(labels))-1
@@ -39,6 +71,20 @@ class Classifier:
         self.bc = bc
 
     def classify(self,test_data,test_labels):
+        """
+        Classifies data.
+
+        Args:
+            - test_data : data to be classified.
+            - test_labels : real labels of test_data.
+
+        Returns:
+            Tuple containing
+                - targets : estimated labels of test_data from the classification.
+                - errors : absolute error of estimated labels.
+                - correct : indices of elements of test_data correctly classified.
+                - incorrect : indices of elements of test_data incorrectly classified.
+        """
         if len(test_data)>0:
             targets, errors, correct, incorrect = classify(test_data, self.dim, self.tri, self.labels[self.sample,:], real=test_labels)
         else:
@@ -46,38 +92,92 @@ class Classifier:
         return targets, errors, correct, incorrect
 
 class TestClassifier(Classifier):
+    """
+    Classifier for one of the studied datasets. 
+
+    Inherits:
+        - Classifier
+    """
     def __init__(self, data_name, run_params):
         data_params, data, labels, _ = read_general_data(data_name)
         super().__init__(data, labels, data_params, run_params)
 
 class CirclesClassifier(TestClassifier):
+    """
+    Classifier for circles dataset. 
+
+    Inherits:
+        - TestClassifier
+    """
     def __init__(self, run_params):
         super().__init__("circles",run_params)
 
 class MoonsClassifier(TestClassifier):
+    """
+    Classifier for moons dataset. 
+
+    Inherits:
+        - TestClassifier
+    """
     def __init__(self, run_params):
         super().__init__("moons",run_params)
 
 class ClassificationClassifier(TestClassifier):
+    """
+    Classifier for scikit classification dataset. 
+
+    Inherits:
+        - TestClassifier
+    """
     def __init__(self, run_params):
         super().__init__("classification",run_params)
 
 class IrisClassifier(TestClassifier):
+    """
+    Classifier for iris dataset. 
+
+    Inherits:
+        - TestClassifier
+    """
     def __init__(self, run_params):
         super().__init__("iris",run_params)
 
 class BeansClassifier(TestClassifier):
+    """
+    Classifier for beans dataset. 
+
+    Inherits:
+        - TestClassifier
+    """
     def __init__(self, run_params):
         super().__init__("beans",run_params)
 
 class YeastClassifier(TestClassifier):
+    """
+    Classifier for yeast dataset. 
+
+    Inherits:
+        - TestClassifier
+    """
     def __init__(self, run_params):
         super().__init__("yeast",run_params)
 
 class FrancoClassifier(TestClassifier):
+    """
+    Classifier for franco dataset. 
+
+    Inherits:
+        - TestClassifier
+    """
     def __init__(self, run_params):
         super().__init__("franco",run_params)
 
 class SpheresClassifier(TestClassifier):
+    """
+    Classifier for spheres dataset. 
+
+    Inherits:
+        - TestClassifier
+    """
     def __init__(self, run_params):
         super().__init__("spheres",run_params)

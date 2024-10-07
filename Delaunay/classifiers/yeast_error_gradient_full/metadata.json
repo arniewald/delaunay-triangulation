@@ -1,0 +1,1 @@
+{"data_name": "yeast", "names_data": ["x0", "x1", "x2", "x3"], "names_labels": ["y0", "y1"], "classes": ["NUC", "ME1", "ME2"], "features": ["mcg", "gvh", "mit", "erl"], "ref_label": null, "size_prop": 0.1, "sampling": "random", "test_size": 50, "al": 0.035, "errw": 0.9, "avw": 4.5, "rep": 1, "bc_time": 20, "mte_threshold": 0.4, "seed": 0}

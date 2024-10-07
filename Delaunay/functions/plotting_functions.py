@@ -7,16 +7,46 @@ from classes.Classifier import Classifier
 from classes.Measurer import Measurer
 
 def generate_colors2D(labels,points):
+    """
+    Generates the colors of the points to be plotted in 2D according to their labels.
+
+    Args:
+        - labels : labels of the points to be plotted.
+        - points : points to be plotted.
+
+    Returns:
+        colors : colors of the points to be plotted.
+    """
     colors = [[min(1,labels[points][i,0]),0,1-min(labels[points][i,0],1)] for i in range(len(points))]
     colors = [[max(c[0],0),0,max(c[2],0)] for c in colors]
     return colors
 
 def generate_colors3D(labels,points):
+    """
+    Generates the colors of the points to be plotted in 3D according to their labels.
+
+    Args:
+        - labels : labels of the points to be plotted.
+        - points : points to be plotted.
+
+    Returns:
+        colors : colors of the points to be plotted.
+    """
     colors = [[min(1,labels[points][i,0]),min(labels[points][i,1],1),1-min(labels[points][i,0],1)-min(1,labels[points][i,1])] for i in range(len(points))]
     colors = [[max(c[0],0),max(c[1],0),max(c[2],0)] for c in colors]
     return colors
 
 def generate_test_colors(test_labels,dim_labels):
+    """
+    Generates the colors of the test points according to their labels.
+
+    Args:
+        - test_labels :  labels of the test points to be plotted.
+        - dim_labels : nº of diferent possible labels - 1.
+
+    Returns:
+        test_colors : colors of the test points to be plotted.
+    """
     test_colors = []
     if dim_labels == 1:
         for i in range(len(test_labels)):
@@ -35,6 +65,16 @@ def generate_test_colors(test_labels,dim_labels):
     return test_colors
 
 def generate_colors(labels,points,dim_labels):
+    """
+    Generates the colors of the points to be plotted in either 2D or 3D according to their labels.
+
+    Args:
+        - labels : labels of the points to be plotted.
+        - points : points to be plotted.
+
+    Returns:
+        colors : colors of the points to be plotted.
+    """
     if dim_labels==1:
         colors = generate_colors2D(labels,points)
     else:
@@ -42,6 +82,30 @@ def generate_colors(labels,points,dim_labels):
     return colors
 
 def plot_data2D(data,labels,dim_labels,sample,rem,tri,added=[],test_data=[],test_labels=[],correct=[],incorrect=[],write_labels=False):
+    """
+    Plots the 2D:
+        - Classification data (corresponding to the Delaunay triangulation) colored by their estimated labels.
+        - Edges of the Delaunay triangulation.
+        - Training data colored by their real labels.
+        - Test data colored by their real labels and marker corresponding to wheter it has been correctly classified ('o') or not ('x').
+
+    Args:
+        - data : data containing classification and training points.
+        - labels : labels of data.
+        - dim_labels : nº of diferent possible labels - 1.
+        - sample : indices of the classification points.
+        - rem : indices of training data points.
+        - tri : Delaunay triangulation of points from data indexed by sample.
+        - added : if not empty, plot the added barycenters bigger.
+        - test_data : data used to compute real error.
+        - test_labels : labels of test_data.
+        - correct : if not empty, indices of points whose estimated label is the same as the real one.
+        - incorrect : if not empty, indices of points whose estimated label is not the same as the real one.
+        - write_labels : if True, annotate the estimated labels.
+    
+    Returns:
+        fig : resulting 2D plot as pyplot figure.
+    """
     fig =  plt.figure(figsize = (10,7))
     ax = fig.add_subplot()
 
@@ -58,9 +122,33 @@ def plot_data2D(data,labels,dim_labels,sample,rem,tri,added=[],test_data=[],test
         test_colors = generate_test_colors(test_labels,dim_labels)
         ax.scatter(test_data[correct][:,0],test_data[correct][:,1],s=100,color = [test_colors[i] for i in correct],marker='o')
         ax.scatter(test_data[incorrect][:,0],test_data[incorrect][:,1],s=100,color = [test_colors[i] for i in incorrect],marker='x')
-        return fig
+    return fig
 
 def plot_data3D(data,labels,dim_labels,sample,rem,added=[],test_data=[],test_labels=[],correct=[],incorrect=[],write_labels=False):
+    """
+    Plots the 3D:
+        - Classification data (corresponding to the Delaunay triangulation) colored by their estimated labels.
+        - Edges of the Delaunay triangulation.
+        - Training data colored by their real labels.
+        - Test data colored by their real labels and marker corresponding to wheter it has been correctly classified ('o') or not ('x').
+
+    Args:
+        - data : data containing classification and training points.
+        - labels : labels of data.
+        - dim_labels : nº of diferent possible labels - 1.
+        - sample : indices of the classification points.
+        - rem : indices of training data points.
+        - tri : Delaunay triangulation of points from data indexed by sample.
+        - added : if not empty, plot the added barycenters bigger.
+        - test_data : data used to compute real error.
+        - test_labels : labels of test_data.
+        - correct : if not empty, indices of points whose estimated label is the same as the real one.
+        - incorrect : if not empty, indices of points whose estimated label is not the same as the real one.
+        - write_labels : if True, annotate the estimated labels.
+    
+    Returns:
+        fig : resulting 3D plot as pyplot figure.
+    """
     fig =  plt.figure(figsize = (10,7))
     ax = fig.add_subplot(projection='3d')
 
@@ -79,6 +167,30 @@ def plot_data3D(data,labels,dim_labels,sample,rem,added=[],test_data=[],test_lab
     return fig
 
 def plot_data(data,labels,dim,dim_labels,sample,rem,tri,added=[],test_data=[],test_labels=[],correct=[],incorrect=[],write_labels=False):
+    """
+    Plots the either 2D or 3D:
+        - Classification data (corresponding to the Delaunay triangulation) colored by their estimated labels.
+        - Edges of the Delaunay triangulation.
+        - Training data colored by their real labels.
+        - Test data colored by their real labels and marker corresponding to wheter it has been correctly classified ('o') or not ('x').
+
+    Args:
+        - data : data containing classification and training points.
+        - labels : labels of data.
+        - dim_labels : nº of diferent possible labels - 1.
+        - sample : indices of the classification points.
+        - rem : indices of training data points.
+        - tri : Delaunay triangulation of points from data indexed by sample.
+        - added : if not empty, plot the added barycenters bigger.
+        - test_data : data used to compute real error.
+        - test_labels : labels of test_data.
+        - correct : if not empty, indices of points whose estimated label is the same as the real one.
+        - incorrect : if not empty, indices of points whose estimated label is not the same as the real one.
+        - write_labels : if True, annotate the estimated labels.
+    
+    Returns:
+        fig : resulting 2D or 3D plot as pyplot figure.
+    """
     if dim==2:
         fig = plot_data2D(data,labels,dim_labels,sample,rem,tri,added,test_data,test_labels,correct,incorrect,write_labels)
     else:
@@ -86,6 +198,29 @@ def plot_data(data,labels,dim,dim_labels,sample,rem,tri,added=[],test_data=[],te
     return fig
 
 def plot_scrollable_data(data,labels,sample,rem,dim,dim_labels,it,long_data,long_labels,long_tris,err_dict,run_params):
+    """
+    Plots scrollable data and metrics. 
+    It allows to visualize at each step of the training process:
+        - The classification and training points and the Delaunay triangulation.
+        - The evolution of the metrics.
+
+    Args:
+        - data : data containing classification and training points.
+        - labels : labels of data.
+        - sample : indices of the classification points.
+        - rem : indices of training data points.
+        - dim : dimension of data.
+        - dim_labels : nº of diferent possible labels - 1.
+        - it : number of times to move points, estimate labels and compute metrics.
+        - long_data : trajectories of the classification points
+        - long_labels : estimated labels of the classification points at each time.
+        - long_tris : Delaunay triangulations at each time
+        - err_dict : dictionary containing the metrics of the training.
+        - run_params : parameters that characterize how the data has been initialized and trained. 
+
+    Returns:
+        - None
+    """
     errw = run_params['errw']
     avw = run_params['avw']
     colors_rem = generate_colors(labels,rem,dim_labels)
@@ -138,35 +273,47 @@ def plot_scrollable_data(data,labels,sample,rem,dim,dim_labels,it,long_data,long
     time_slider2.on_changed(update2)
     plt.show()
 
-def plot_errors(data_name, filename):
-    path = str(os.getcwd())+'\\results\\' + data_name + '\\errors\\' + filename + '.csv'
-    df = pd.read_csv(path)
-    err_dict = dict()
-    columns = ['avs','sigmas','evars','rerrs']
-    for column in columns:
-        err_dict[column] = df[column].tolist()
-
-    fig, ax = plt.subplots(2,2)
-    ax[0,0].plot(range(len(err_dict['avs'])),err_dict['avs'],'--+')
-    ax[0,0].set_title('Average training error')
-
-    ax[0,1].plot(range(len(err_dict['sigmas'])),err_dict['sigmas'],'--+')
-    ax[0,1].set_title('Training error standard deviation')
-
-    ax[1,0].plot(range(len(err_dict['evars'])),err_dict['evars'],'--+')
-    ax[1,0].set_title('Edge length variance')
-
-    ax[1,1].plot(range(len(err_dict['rerrs'])),err_dict['rerrs'],'--+')
-    ax[1,1].set_title('Average real error')
-    return fig
-
 def plot_classifier(Classifier: Classifier):
-    plot_data(Classifier.data,Classifier.labels,Classifier.dim,Classifier.dim_labels,Classifier.sample,Classifier.rem,Classifier.tri)
+    """
+    Plots the data of a classifier.
+
+    Args:
+        - Classifier : Classifier the points of which are to be plotted.
+
+    Returns:
+        - fig : plot of the classifier as a pyplot figure.
+    """
+    fig = plot_data(Classifier.data,Classifier.labels,Classifier.dim,Classifier.dim_labels,Classifier.sample,Classifier.rem,Classifier.tri)
+    return fig
     
 def plot_classifier_scrollable(Classifier: Classifier,it,long_data,long_labels,long_tris,err_dict,run_params):
+    """
+    Plots a scrollable plot of the data of a classifier during its training.
+
+    Args:
+        - Classifier : Classifier the points of which are to be plotted.
+        - it : number of times to move points, estimate labels and compute metrics.
+        - long_data : trajectories of the classification points
+        - long_labels : estimated labels of the classification points at each time.
+        - long_tris : Delaunay triangulations at each time
+        - err_dict : dictionary containing the metrics of the training.
+        - run_params : parameters that characterize how the data has been initialized and trained. 
+
+    Returns:
+        - None
+    """
     plot_scrollable_data(Classifier.data,Classifier.labels,Classifier.sample,Classifier.rem,Classifier.dim,Classifier.dim_labels,it,long_data,long_labels,long_tris,err_dict,run_params)
 
 def plot_metrics(Measurer: Measurer):
+    """
+    Plots metrics of the training of a classifier.
+
+    Args:
+        - Measurer : Measurer containing the metrics of the training of a classifier.
+
+    Returns:
+        - fig : plot of the metrics as a pyplot figure.
+    """
     fig, ax = plt.subplots(2,2)
     metrics = ['training_error','error_variance','edge_variance','real_error']
     for i in range(len(metrics)):

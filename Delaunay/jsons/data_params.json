@@ -80,5 +80,23 @@
         "dim": 3,
         "n_spheres": 3,
         "n_samples_per_sphere": 1000
+    },
+
+    "anemia":
+    {
+        "features": [
+            "%Red Pixel",
+            "%Green pixel",
+            "%Blue pixel"
+        ]
+    },
+
+    "diabetes":
+    {
+        "features": [
+            "Glucose",
+            "Insulin",
+            "BloodPressure"
+        ]
     }
 }

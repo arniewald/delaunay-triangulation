@@ -43,13 +43,13 @@
 
     "iris":
     {
-        "size_prop": 0.5,
-        "sampling": "entropic",
-        "test_size": 20,
+        "size_prop": 0.9,
+        "sampling": "random",
+        "test_size": 25,
         "al": 0.035,
         "errw": 0.9,
-        "avw": 5,
-        "rep": 1,
+        "avw": 0.00001,
+        "rep": 0,
         "bc_time": null,
         "mte_threshold": 0.4,
         "seed": 0
@@ -59,7 +59,7 @@
     {
         "size_prop": 0.25,
         "sampling": "random",
-        "test_size": 347,
+        "test_size": 347, 
         "al": 0.035,               
         "errw": 0.5,               
         "avw": 0,
@@ -73,7 +73,7 @@
     {
         "size_prop": 0.25,
         "sampling": "random",
-        "test_size": 31,
+        "test_size": 52,
         "al": 0.035,
         "errw": 0.5,
         "avw":0,
@@ -109,5 +109,34 @@
         "bc_time": null, 
         "mte_threshold": 0.5, 
         "seed": 0
+    },
+
+    "anemia":
+    {
+        "size_prop": 0.3,
+        "sampling": "random",
+        "test_size": 10,
+        "al": 0.035,
+        "errw": 0.5,
+        "avw": 1,
+        "rep": 0, 
+        "bc_time": null, 
+        "mte_threshold": 0.5, 
+        "seed": 0
+    },
+
+    "diabetes":
+    {
+        "size_prop": 0.3,
+        "sampling": "entropic",
+        "test_size": 76,
+        "al": 0.035,
+        "errw": 0.5,
+        "avw": 2,
+        "rep": 0, 
+        "bc_time": null, 
+        "mte_threshold": 0.5, 
+        "seed": 0
     }
+
 }

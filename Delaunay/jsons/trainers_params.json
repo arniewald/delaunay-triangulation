@@ -1,6 +1,20 @@
 {
     "balanced_gradient":
     {
+        "simple":
+        {
+            "size_prop": 0.25,
+            "sampling": "random",
+            "test_size": 50,
+            "al": 0.035,
+            "errw": 0.5,
+            "avw": 1,
+            "rep": 0,
+            "bc_time": null,
+            "mte_threshold": 0.4,
+            "seed": 0
+        },
+        
         "barycenters":
         {
             "size_prop": 0.25,
@@ -74,13 +88,27 @@
 
     "error_gradient":
     {
+        "simple":
+        {
+            "size_prop": 0.25,
+            "sampling": "random",
+            "test_size": 50,
+            "al": 0.035,
+            "errw": 0.9,
+            "avw": 1,
+            "rep": 0,
+            "bc_time": null,
+            "mte_threshold": 0.4,
+            "seed": 0
+        },
+
         "barycenters":
         {
             "size_prop": 0.25,
             "sampling": "random",
             "test_size": 50,
             "al": 0.035,
-            "errw": 0.5,
+            "errw": 0.9,
             "avw": 1,
             "rep": 0,
             "bc_time": 20,
@@ -108,7 +136,7 @@
             "sampling": "random",
             "test_size": 50,
             "al": 0.035,
-            "errw": 0.5,
+            "errw": 0.9,
             "avw": 5,
             "rep": 0,
             "bc_time": null,
@@ -122,7 +150,7 @@
             "sampling": "entropic",
             "test_size": 50,
             "al": 0.035,
-            "errw": 0.5,
+            "errw": 0.9,
             "avw": 1,
             "rep": 0,
             "bc_time": null,
@@ -136,7 +164,7 @@
             "sampling": "entropic",
             "test_size": 50,
             "al": 0.035,
-            "errw": 0.5,
+            "errw": 0.9,
             "avw": 5,
             "rep": 1,
             "bc_time": 20,
@@ -147,6 +175,20 @@
 
     "distance_gradient":
     {
+        "simple":
+        {
+            "size_prop": 0.25,
+            "sampling": "random",
+            "test_size": 50,
+            "al": 0.035,
+            "errw": 0.1,
+            "avw": 1,
+            "rep": 0,
+            "bc_time": null,
+            "mte_threshold": 0.4,
+            "seed": 0
+        },
+
         "barycenters":
         {
             "size_prop": 0.25,
@@ -167,7 +209,7 @@
             "sampling": "random",
             "test_size": 50,
             "al": 0.035,
-            "errw": 0.9,
+            "errw": 0.1,
             "avw": 1,
             "rep": 1,
             "bc_time": null,

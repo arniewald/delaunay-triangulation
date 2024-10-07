@@ -8,12 +8,12 @@ def reshape_labels(data,labels,dim_labels):
     Transforms the 1-D array of labels into an dim_labels-D array, where n = (nº of diferent labels - 1).
 
     Args:
-        - data: the data to classify
-        - labels: original 1-D array of labels
+        - data : the data to classify.
+        - labels : original 1-D array of labels.
+        - dim_labels : nº of diferent labels - 1.
 
     Returns:
-        - labels: the labels reshaped
-        - dim_labels: nº of diferent labels - 1
+        labels : the labels reshaped.
     """
 
     labels_aux = np.zeros((len(data),dim_labels+1))
@@ -23,6 +23,22 @@ def reshape_labels(data,labels,dim_labels):
     return labels
 
 def refine(data,labels,dim,rep=0):
+    """
+    Adds points to the convex hull of the data.
+
+    Args:
+        - data : the data to refine.
+        - labels : labels of the data.
+        - dim : dimension of data.
+        - rep : number of times to refine the convex hull.
+
+    Returns:
+        Tuple containing
+            - new_data : data with the convex hull refined.
+            - new_labels : labels of the previous data plus the ones from the new points added.
+            - hull : indices of data belonging to the convex hull.
+    """
+
     print("Refining convex hull...")
     hull = ConvexHull(data)
     hull = list(hull.vertices)
@@ -58,6 +74,17 @@ def refine(data,labels,dim,rep=0):
     return new_data, new_labels, hull
 
 def generate_shannon_entropies(data,labels,hull):
+    """
+    Generates the shannon entropy of each point of data.
+
+    Args:
+        - data : data from which to compute the shannon entropy.
+        - labels : labels of data.
+        - hull : indices of data belonging to the convex hull.
+
+    Return:
+        shannon_entropies : dictionary containing the shannon entropy of each point of data.
+    """
     tri = Delaunay(data)
     out_hull = [i for i in range(len(data)) if i not in hull]
     adj = dict()
@@ -85,6 +112,17 @@ def generate_shannon_entropies(data,labels,hull):
     return shannon_entropies
 
 def non_random_sample(shannon_entropies,size):
+    """
+    Draws a sample of the data, not including its convex hull. The probability is proportional to their shannon
+    entropy.
+
+    Args:
+        - shannon_entropies : dictionary containing the shannon entropy of each point of data. 
+        - size : size of the sample.
+
+    Returns:
+        out_hull : indices of data belonging to the drawn sample.
+    """
     out_hull = []
     pop = list(shannon_entropies.keys())
     for _ in range(size):
@@ -101,13 +139,28 @@ def non_random_sample(shannon_entropies,size):
     return out_hull
 
 def draw_initial_sample(data,labels,hull,size,sampling):
-    
+    """
+    Draws the points of data that will be used to perform the Delaunay triangulation. 
+    These points and their final estimated labels after training will consitute the classifier.
+
+    Args:
+        - data : data from which to draw the points.
+        - labels : labels of data.
+        - hull : boundary of the convex hull of data.
+        - size : number of points to draw.
+        - sampling : type of sampling to perform, either 'random' or 'entropic'.
+
+    Returns:
+        Tuple containing
+            - sample : indices of the data that will be used as a classifier.
+            - out_hull : indices of sample that do not belong to the convex hull boundary.
+            - rem : indices of data that will be used for training.
+    """
     length = len(hull)
     out_hull_size = max(0,size-length)
 
     if sampling=='random':
         out_hull = random.sample([i for i in range(len(data)) if i not in hull],out_hull_size)
-        print('Lengths:',len(hull),len(out_hull))
     elif sampling=='entropic':
         shannon_entropies = generate_shannon_entropies(data,labels,hull)
         out_hull = non_random_sample(shannon_entropies,out_hull_size)
@@ -116,26 +169,26 @@ def draw_initial_sample(data,labels,hull,size,sampling):
     sample = np.array([int(i) for i in sample])
     sample.sort()
     out_hull = [i for i in range(len(sample)) if sample[i] in out_hull]
-    print('Lengths:',len(hull),len(out_hull))
     rem = np.array([int(i) for i in range(len(data)) if int(i) not in sample])
     return sample, out_hull, rem
 
 def initialize_sample(data,labels,dim,run_params):
     """
-    Refines the convex hull of data and selects sample to perform Delaunay triangulation.
+    Refines the convex hull of data and the points to be sampled that will be used to perform the Delaunay triangulation
 
     Args:
-        - data: array with initial data.
-        - labels: labels of the data.
-        - size: size of the desired sample. If convex hull is bigger, the sample will just contain the convex hull.
-        - dim: dimension of data: each element of data has dim features and one label.
-        - rep: number of times to refine the convex hull.
+        - data : array with initial data.
+        - labels : labels of the data.
+        - dim : dimension of data, number of features of data.
+        - run_params : parameters that characterize how the data will be initialized and trained.
     
     Returns:
-        - new data: data reordered (first elements belong to sample) and with refinement of the complex hull.
-        - sample: labels of the data selected for the sample.
-        - rem: labels of the data not selected for the sample.
-        - out_hull: labels of the elements of sample not belonging to the convex hull.
+        Tuple containing
+            - new_data : data with the convex hull refined.
+            - new_labels : labels of the previous data plus the ones from the new points added.
+            - sample : labels of the data selected for the sample.
+            - rem : labels of the data not selected for the sample.
+            - out_hull : labels of the elements of sample not belonging to the convex hull.
     """
     size_prop = run_params['size_prop']
     rep = run_params['rep']
@@ -151,15 +204,16 @@ def sample_to_test(data,labels,run_params):
     Samples and retrieves a subset of data to perform tests.
 
     Args:
-        - data: array with initial data from which to sample the test data.
-        - labels: labels of the data.
-        - size: size of the sample.
+        - data : array with initial data from which to sample the test data.
+        - labels : labels of the data.
+        - run_params : parameters that characterize how the data will be initialized and trained.
 
     Returns:
-        - rem_data: data not from the sample.
-        - rem_labels: labels of data not from the sample.
-        - test_data: data to be tested.
-        - test_labels: labels of data to be tested.
+        Tuple containing
+            - rem_data : data not from the sample.
+            - rem_labels : labels of data not from the sample.
+            - test_data : data to be tested.
+            - test_labels : labels of data to be tested.
     """
     test_size = run_params['test_size']
     hull = ConvexHull(data)
@@ -171,36 +225,6 @@ def sample_to_test(data,labels,run_params):
     rem_labels = labels[[i for i in range(len(data)) if i not in indices]].copy()
     return rem_data, rem_labels, test_data, test_labels
 
-def adjacency(tri, out_hull):
-    """
-    Creates a dictionary indicating which points of the triangulation
-    are adjacent to each other.
-
-    Args:
-        - tri: Delaunay triangulation.
-        - out_hull: labels of the elements of sample not belonging to the convex hull.
-
-    Returns:
-        - adj: dictionary. Each key is an element of out_hull and its values are the labels of the points of the
-               triangulation that are adjacent to the corresponding point. Note that the elements of the triangulation
-               and the ones of out_hull are both indices of elements of sample.
-    """
-    adj = dict()
-    print(len(tri.simplices))
-    for i in out_hull:
-        adj[i] = []
-    for triangle in tri.simplices:
-        try:
-            for u in triangle:
-                if u in out_hull:
-                    for v in triangle:
-                        adj[u].append(v)
-            for key in adj.keys():
-                adj[key] = list(set(adj[key]))
-        except Exception as e:
-            print('Exception at triangle',triangle,':',e) 
-    return adj
-
 def subtesselate(data,sample,dim):
     
     """ 
@@ -208,13 +232,14 @@ def subtesselate(data,sample,dim):
     and computes the barycentric coordinates from the other points.
     
     Args: 
-        - data: original set of points.
-        - sample: points from which to compute the Delaunay triangulation.
-        - dim: dimension of the points of data.
+        - data : original set of points.
+        - sample : points from which to compute the Delaunay triangulation.
+        - dim : dimension of the points of data.
     
     Returns:
-        - tri: Delaunay triangulation. The indexation of the vertices comes from sample, not from data.
-        - bc: barycentric coordinates of rem with respect to tri.
+        Tuple containing
+            - tri : Delaunay triangulation. The indexation of the vertices comes from sample, not from data.
+            - bc : barycentric coordinates of rem with respect to tri.
     """
     tri = Delaunay(data[sample])
     bc = []

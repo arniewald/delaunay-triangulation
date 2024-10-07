@@ -7,15 +7,16 @@ def sample_to_test(data,labels,run_params):
     Samples and retrieves a subset of data to perform tests.
 
     Args:
-        - data: array with initial data from which to sample the test data.
-        - labels: labels of the data.
-        - size: size of the sample.
+        - data : array with initial data from which to sample the test data.
+        - labels : labels of the data.
+        - run_params : parameters that characterize how the data will be initialized and trained.
 
     Returns:
-        - rem_data: data not from the sample.
-        - rem_labels: labels of data not from the sample.
-        - test_data: data to be tested.
-        - test_labels: labels of data to be tested.
+        Tuple containing
+            - rem_data : data not from the sample.
+            - rem_labels : labels of data not from the sample.
+            - test_data : data to be tested.
+            - test_labels : labels of data to be tested.
     """
     test_size = run_params['test_size']
     hull = ConvexHull(data)
@@ -35,17 +36,18 @@ def classify(points, dim, tri, trilabels, real=None):
     each point, then takes the one with maximum value.
 
     Args:
-        - points: points to be classified. They must lie within the convex hull of the triangulation.
-        - dim: dimension of data.
-        - tri: Delaunay triangulation.
-        - trilabels: labels of the points of tri.
-        - real: real values of the labels of points (in case we want to compare the estimated labels with them)
+        - points : points to be classified. They must lie within the convex hull of the triangulation.
+        - dim : dimension of data.
+        - tri : Delaunay triangulation.
+        - trilabels : labels of the points of tri.
+        - real : real values of the labels of points (in case we want to compare the estimated labels with them)
 
     Returns:
-        - targets: estimated labels of points.
-        - errors: if real!=None, errors of the estimated labels.
-        - correct: if real!=None, indices of points whose estimated label is the same as the real one.
-        - incorrect: if real!=None, indices of points whose estimated label is not the same as the real one.
+        Tuple containing
+            - targets : estimated labels of points.
+            - errors : if real!=None, errors of the estimated labels.
+            - correct : if real!=None, indices of points whose estimated label is the same as the real one.
+            - incorrect : if real!=None, indices of points whose estimated label is not the same as the real one.
     """
     bc = []
     errors, correct, incorrect = [], [], []

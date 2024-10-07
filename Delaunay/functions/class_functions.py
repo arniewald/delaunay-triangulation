@@ -4,46 +4,84 @@ from classes.Classifier import Classifier
 from classes.Trainer import Trainer
 from classes.Measurer import Measurer
 
-def add_barycenters_step(Classifier:Classifier,Trainer:Trainer,t):
+def add_barycenters_step(Classifier:Classifier,Trainer:Trainer,t,verbose=False):
+    """
+    Adds barycenters to the points of the triangulation.
+
+    Args:
+        - Classifier : Classifier the points of the triangulation of which barycenters are to be added.
+        - Trainer : Trainer that adds the barycenters.
+        - t : number of iteration of the full training.
+        - verbose :  if True, prints the steps of the function.
+
+    Returns:
+        - added : indices of the data from classifier corresponding to the added barycenters. 
+    """
     added = []
     if Trainer.bc_time!=None and (t+1)%Trainer.bc_time==0:
         start = time()
-        print('Adding barycenters...')
+        if verbose:
+                print('Adding barycenters...')
         added = Trainer.add_barycenters(Classifier)
-        print('Points added: ',len(added))
+        if verbose:
+                print('Points added: ',len(added))
         Trainer.first_train(Classifier)
         end = time()
-        print('Time to add barycenters: '+str(end-start))
+        if verbose:
+                print('Time to add barycenters: '+str(end-start))
     return added
+
+def premeasurement(Classifier: Classifier, Trainer: Trainer, Measurer: Measurer, test_data=[],test_labels=[], verbose=False):
+    """
+    Initializes the measurement of the metrics before starting the full training.
+
+    Args:
+        - Classifier : Classifier about to be trained.
+        - Trainer : Trainer that will train the classifier.
+        - Measurer : Measurer that performs and saves the metrics.
+        - test_data : if not empty, data from which to compute the real error.
+        - test_labels : if not empty, labels of test_data.
+        - verbose : if True, prints the steps of the function.
+
+    Returns:
+        - None
+    """
+    Measurer.measure_training_error(Classifier, Trainer.e)
+    if verbose:
+        print('Training error measured')
+    Measurer.measure_error_variance(Classifier, Trainer.e)
+    if verbose:
+        print('Error variance measured')
+    Measurer.measure_edge_variance(Classifier)
+    if verbose:
+        print('Edge variance measured')
+    Measurer.measure_real_error(Classifier,test_data,test_labels)
+    if verbose:
+        print('Real error measured')
 
 def fully_train(Classifier:Classifier,Trainer:Trainer,Measurer:Measurer,it,test_data=[],test_labels=[],save=False,verbose=False):
     """
-    Performs the estimation of labels and movement of points as many times as indicated.
-    Also writes, for each iteration: the sum of estimated errors, the sum of the squared residuals, the variance of the estimated
-    error and the real error (only if function f applied).
+    Performs the full training of the classifier: moves the points of the triangulation, adds barycenters, estimates the labels and saves the metrics iteratively.
 
     Args:
-        - data: array with data.
-        - labels: labels of the data.
-        - sample: labels of data belonging to the triangulation.
-        - out_hull: labels of the elements of sample not belonging to the convex hull.
-        - dim: dimension of data.
-        - dim_labels: nº of diferent labels - 1
-        - it: number of times to move the points.
-        - al: measures the magnitude of the overall displacement.
-        - bc_time: time at which to add barycenters.
-        - mte_threshold: threshold above which the barycenters will be added.
-        - filename: core name of the file where to write the errors.
-        - test_data: if len(test_data)>0, data with which to compute the real error.
-        - real: if len(real)>0, real labels of data with which to compute the real error.
+        - Classifier : Classifier to be fully trained.
+        - Trainer : Trainer that will perform the training, with the necessary parameters.
+        - Measurer : Measurer that will measure and save the metrics of the training.
+        - it : number of times to move points, estimate labels and compute metrics.
+        - test_data : data from which to compute the real error.
+        - test_labels : labels of test_data.
+        - save : if True, saves the trajectories of the classification points, their estimated labels and their triangulations at each time.
+        - verbose : if True, prints the steps of the function.
 
     Returns:
-        - data: new data after moving it and adding barycenters.
-        - labels: new labels.
-        - sample: new indices of data from the triangulation.
-        - added: indices of added data.
-        - tri: final Delaunay triangulation.
-        - e: error of points from triangulation.
+        Tuple containing
+            - data: new data after moving it and adding barycenters.
+            - labels: new labels.
+            - sample: new indices of data from the triangulation.
+            - added : indices of added barycenters.
+            - long_data : trajectories of the classification points
+            - long_labels : estimated labels of the classification points at each time.
+            - long_tris : Delaunay triangulations at each time
     """
     
     added = []
@@ -51,30 +89,34 @@ def fully_train(Classifier:Classifier,Trainer:Trainer,Measurer:Measurer,it,test_
     if verbose:
         print("Iteration\tMean error\tError variance\tEdge length variance\tReal error")
     for i in range(it):
-        print(i)
-        print(len(Classifier.rem))
-        try:
-            added = add_barycenters_step(Classifier,Trainer,i)
-            print('Barycenters added:',len(added))
+        #try:
+            added = add_barycenters_step(Classifier,Trainer,i,verbose=verbose)
+            if verbose:
+                print('Barycenters added:',len(added))
             Trainer.train(Classifier)
-            print('Data trained')
+            if verbose:
+                print('Data trained')
             Measurer.measure_training_error(Classifier, Trainer.e)
-            print('Training error measured')
+            if verbose:
+                print('Training error measured')
             Measurer.measure_error_variance(Classifier, Trainer.e)
-            print('Error variance measured')
+            if verbose:
+                print('Error variance measured')
             Measurer.measure_edge_variance(Classifier)
-            print('Edge variance measured')
+            if verbose:
+                print('Edge variance measured')
             Measurer.measure_real_error(Classifier,test_data,test_labels)
-            print('Real error measured')
+            if verbose:
+                print('Real error measured')
             if verbose:
                 print(i,Measurer.metrics['training_error'][i],Measurer.metrics['error_variance'][i],Measurer.metrics['edge_variance'][i],Measurer.metrics['real_error'][i])
             if save:
                 long_data.append(Classifier.data[Classifier.sample])
                 long_labels.append(Classifier.labels[Classifier.sample,:])
                 long_tris.append(Classifier.tri)
-        except Exception as e:
-            print("Exception at time ",i,":",e)
-            break
+            """ except Exception as e:
+                print("Exception at time ",i,":",e)
+                break """
 
     if verbose:
         print("Total final data: ",len(Classifier.data))

@@ -5,11 +5,31 @@ Optimization
 Fix the data origin
 Non-euclidean distances
 
+15/7/24 (ending)
+Clean code
+Examples
+Powerpoint
+Draw conclusions
+Point improvements and possible cause of errors
+Escrit JAE de com ha anat, mitja pàgina (t'ho demanaran, mira tots dos correus)
+BEQUES UPC DES DEL BSC
+Eurecat
+
+
+1/7/2024
+Take beans or yeast and train them (artesania).
+length beans: 3474
+
+80% training, 10% validation, 10% test.
+    - TEST ONLY ONCE!!!
+    - Validation to tune parameters
+    - Training: triangulation and mse minimization.
+Without moving points, find the optimal:
+    - Number of points of triangulation
+    - avw
+    - random or entropic
+
 17/06/24
-Fix the code (circles not working!!)
-Send results
-Use more points for triangulation
-Do the barycentric addition at the start
 Compare random sampling and non-random sampling (check training and real error, without moving points)
 Measure entropy
 Try neigborhoods by closest neighbor
@@ -24,26 +44,6 @@ Entropy, mutual information
 Betti numbers
 Rigidesa de la triangulació de Delaunay
 
-30/05/24
-CHECK MEMORY
-Implement averages technique (=> you will get rid of perturbation)
-Make level visualization (looks pretty cool)
-3D version of Franco's dataset
-
-06/05/24
-Return to flat case. Make video + quiver + predicted quiver. Maybe add noise to the dataset.
-
-22/4/24
-Our main goal right now is REDUCING TRAINING ERROR (learning process) first 
-and REDUCING REAL ERROR second.
-0. With 1000 points in sample and 6 labels takes a LOT of time (30-40 seconds, both lsq fit and move points)
-1. Solving memory:
-    - Do not calculate barycentric coordinates of tri points.
-    - Add eps*id to P.
-2. Return to error gradient. Start with an easy case, then Beans. Compare with barycenters
-3. Think of a way of not adding too many barycenters (problematic for small datasets).
-No meeting next day; send an email with results (specifically gradient-barycenters comparison).
-4. Compare when data is in surface and when it is not.
 
 Choices of an appropiate triangulation will have to be made.
 Can we measure overlapping?
